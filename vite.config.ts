@@ -22,4 +22,12 @@ export default defineConfig(async () => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  preview: {
+    host: true,
+    port: 4173,
+    strictPort: true,
+    allowedHosts: [
+      "scppdesktop.lezora.cl"
+    ]
+  }
 }));
