@@ -27,11 +27,24 @@ interface ComboboxAlimentosProps {
   onChange: (value: number) => void;
   disabled?: boolean;
   hideTodos?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function ComboboxAlimentos({ value, onChange, disabled, hideTodos }: ComboboxAlimentosProps) {
-  const [open, setOpen] = React.useState(false)
+export function ComboboxAlimentos({
+  value,
+  onChange,
+  disabled,
+  hideTodos,
+  open: controlledOpen,
+  onOpenChange
+}: ComboboxAlimentosProps) {
+  const [internalOpen, setInternalOpen] = React.useState(false);
   const { apiPrefix, sessionId } = useAppState()
+
+  // Use controlled open state if provided, otherwise use internal state
+  const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   const { data: foods = [] } = useQuery<Food[]>({
     queryKey: ['foodsCombobox'], // Use a different query key to avoid conflicts
@@ -109,6 +122,7 @@ export function ComboboxAlimentos({ value, onChange, disabled, hideTodos }: Comb
                     const selectedFood = allFoods.find(
                       (f) => f.name.toLowerCase() === currentValue.toLowerCase()
                     );
+
                     if (selectedFood && selectedFood.id !== value) {
                       onChange(selectedFood.id);
                     }
