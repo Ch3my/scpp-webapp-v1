@@ -123,10 +123,13 @@ export function ComboboxAlimentos({
                       (f) => f.name.toLowerCase() === currentValue.toLowerCase()
                     );
 
-                    if (selectedFood && selectedFood.id !== value) {
-                      onChange(selectedFood.id);
-                    }
                     setOpen(false);
+                    if (selectedFood && selectedFood.id !== value) {
+                      setTimeout(()=> {
+                        // Apparently shadcn Problem caused freeze, we bypass using setTimeout
+                        onChange(selectedFood.id);
+                      },0)
+                    }
                   }}
                 >
                   {food.name}

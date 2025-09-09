@@ -73,12 +73,12 @@ const FoodScreen: React.FC = () => {
                         <Button variant="outline" onClick={() => {
                             setOpenFoodTransactionDialog(!openFoodTransactionDialog)
                         }}><CirclePlus /></Button>
-           <ComboboxAlimentos
-                value={foodItemIdFilter}
-                onChange={setFoodItemIdFilter}
-                open={comboboxOpen}
-                onOpenChange={setComboboxOpen}
-            />
+                        <ComboboxAlimentos
+                            value={foodItemIdFilter}
+                            onChange={setFoodItemIdFilter}
+                            open={comboboxOpen}
+                            onOpenChange={setComboboxOpen}
+                        />
                         <Input
                             placeholder="Buscar por código..."
                             value={codeFilter}
