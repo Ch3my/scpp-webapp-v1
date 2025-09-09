@@ -163,7 +163,7 @@ const Dashboard: React.FC = () => {
     }, []);
 
     return (
-        <div className="grid gap-4 p-2 w-screen h-screen grid-docs-layout overflow-hidden" >
+        <div className="grid gap-4 p-2 w-screen h-screen grid-docs-layout" >
             <div className="flex flex-col overflow-auto">
                 <ScreenTitle title="Dashboard" />
                 <div className='flex gap-2 px-1 mb-2'>

@@ -28,11 +28,17 @@ export interface GraficoCategoriasRef {
     refetchData?: () => void;
 }
 
+interface ChartDataItem {
+    category: string;
+    amount: number;
+    catId: number;
+}
+
 
 const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasProps>(
     function GraficoCategorias(props, ref) {
         const { onBarClick } = props;
-        const [chartData, setChartData] = useState([]);
+        const [chartData, setChartData] = useState<ChartDataItem[]>([]);
         const [isLoading, setIsLoading] = useState(true)
         const [range, setRange] = useState<{ start: DateTime; end: DateTime }>({ start: DateTime.now(), end: DateTime.now() })
         const [hover, setHover] = useState<number | null>(null)
@@ -59,7 +65,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                 // Transform the raw data into the shape Recharts needs
                 // We’ll use the `data` array from the response:
                 // Each item has { label, data, catId }
-                const newChartData = result.data.slice(0, 8).map((item: any) => ({
+                const newChartData: ChartDataItem[] = result.data.slice(0, 8).map((item: any) => ({
                     category: item.label, // e.g. "Vivienda"
                     amount: item.data, // e.g. 4283327
                     catId: item.catId, // optional if you need it for any additional logic
@@ -67,8 +73,8 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
 
                 setChartData(newChartData);
                 setRange({
-                    start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd" ),
-                    end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd" ),
+                    start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
+                    end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
                 });
             } catch (error) {
                 console.error("Error fetching chart data:", error);
@@ -108,6 +114,12 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
             )
         }
 
+        const maxAmount = chartData.reduce(
+            (max, item) => Math.max(max, item.amount),
+            0
+        );
+        const xAxisDomainMax = maxAmount * 1.1; // 10% buffer
+
         return (
             <Card>
                 <CardHeader>
@@ -120,11 +132,11 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             accessibilityLayer
                             data={chartData}
                             layout="vertical"
-                            margin={{
-                                left: 25, right: 100 
-                            }}
+                        // margin={{
+                        //     left: 25, right: 160
+                        // }}
                         >
-                            <XAxis type="number" dataKey="amount" hide />
+                            <XAxis type="number" dataKey="amount" hide domain={[0, xAxisDomainMax]} />
                             <YAxis
                                 dataKey="category"
                                 type="category"
