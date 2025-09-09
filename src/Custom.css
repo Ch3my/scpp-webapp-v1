@@ -1,0 +1,28 @@
+* {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+}
+
+.grid-docs-layout {
+    grid-template-columns: 2fr 3fr;
+}
+
+
+/* @media (min-width: 576px) { ... }
+
+@media (min-width: 768px) { ... }
+
+@media (min-width: 992px) { ... }
+ */
+@media (min-width: 1200px) {
+    .grid-docs-layout {
+        grid-template-columns: 2fr 4fr;
+    }
+
+}
+
+@media (min-width: 1400px) {
+    .grid-docs-layout {
+        grid-template-columns: 2fr 5fr;
+    }
+}
