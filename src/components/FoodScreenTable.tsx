@@ -20,6 +20,7 @@ import { columns } from "@/table-columns-def/food-screen-columns"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { toast } from 'sonner';
+import { Skeleton } from './ui/skeleton';
 
 interface FoodScreenTableProps {
     apiPrefix: string;
@@ -32,7 +33,7 @@ export function FoodScreenTable({ apiPrefix, sessionId, onEditFoodItem, onOpenFo
     const queryClient = useQueryClient();
     const [sorting, setSorting] = React.useState<SortingState>([])
 
-    const { data: foods = [] } = useQuery<Food[]>({
+    const { data: foods = [], isLoading } = useQuery<Food[]>({
         queryKey: ['foods'],
         queryFn: async () => {
             let params = new URLSearchParams();
@@ -125,7 +126,15 @@ export function FoodScreenTable({ apiPrefix, sessionId, onEditFoodItem, onOpenFo
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {table.getRowModel().rows?.length ? (
+                    {isLoading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                            <TableRow key={index}>
+                                <TableCell colSpan={columns.length}>
+                                    <Skeleton className="h-8 w-full" />
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    ) : table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}

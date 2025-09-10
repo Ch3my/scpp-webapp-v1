@@ -23,6 +23,7 @@ import {
 import { toast } from 'sonner';
 import { columns } from '@/table-columns-def/food-transactions-columns';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Skeleton } from './ui/skeleton';
 
 export interface FoodTransactionsRef {
     refetch: () => void;
@@ -40,7 +41,7 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
         []
     )
 
-    const { data: transactions = [], refetch } = useQuery<FoodTransaction[]>({
+    const { data: transactions = [], refetch, isLoading } = useQuery<FoodTransaction[]>({
         queryKey: ['transactions', foodItemIdFilter],
         queryFn: async () => {
             let params = new URLSearchParams();
@@ -149,7 +150,15 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {table.getRowModel().rows?.length ? (
+                    {isLoading ? (
+                        Array.from({ length: 5 }).map((_, index) => (
+                            <TableRow key={index}>
+                                <TableCell colSpan={columns.length}>
+                                    <Skeleton className="h-8 w-full" />
+                                </TableCell>
+                            </TableRow>
+                        ))
+                    ) : table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}

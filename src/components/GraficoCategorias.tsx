@@ -132,9 +132,9 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             accessibilityLayer
                             data={chartData}
                             layout="vertical"
-                        // margin={{
-                        //     left: 25, right: 160
-                        // }}
+                            margin={{
+                                left: 25
+                            }}
                         >
                             <XAxis type="number" dataKey="amount" hide domain={[0, xAxisDomainMax]} />
                             <YAxis
