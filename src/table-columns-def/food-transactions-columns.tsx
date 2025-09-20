@@ -9,7 +9,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import {
     DropdownMenu,
@@ -42,13 +41,6 @@ const calculateIcon = (bestBefore: DateTime | null) => {
 }
 
 export const columns: ColumnDef<FoodTransaction>[] = [
-    // {
-    //     accessorKey: "occurredAt",
-    //     header: "Fecha",
-    //     cell: ({ row }) => {
-    //         return row.original.occurredAt.toFormat("dd-MM-yyyy");
-    //     }
-    // },
     {
         accessorKey: "bestBefore",
         header: ({ column }) => {
@@ -156,8 +148,20 @@ export const columns: ColumnDef<FoodTransaction>[] = [
             const { onTransactionDeleted, onTransactionEdit } = table.options.meta as any;
             const [dialogOpen, setDialogOpen] = useState(false);
             const [dropdownOpen, setDropdownOpen] = useState(false);
+
+            const handleDelete = () => {
+                onTransactionDeleted?.(row.original.id);
+                setDialogOpen(false);
+                setDropdownOpen(false);
+            };
+
+            const handleDeleteClick = () => {
+                setDropdownOpen(false); // Close dropdown first
+                setDialogOpen(true); // Then open dialog
+            };
+
             return (
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <>
                     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-4 w-6 p-0">
@@ -177,42 +181,39 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                                     Editar
                                 </DropdownMenuItem>
                             )}
-                            <DialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash />
-                                    Eliminar
-                                </DropdownMenuItem>
-                            </DialogTrigger>
+                            <DropdownMenuItem onClick={handleDeleteClick}>
+                                <Trash />
+                                Eliminar
+                            </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                            >
+                            <DropdownMenuItem>
                                 ID: {row.original.id}
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                            >
+                            <DropdownMenuItem>
                                 R-ID: {row.original.fkTransaction}
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Confirmar eliminación</DialogTitle>
-                            <DialogDescription>
-                                ¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-                            <Button variant="destructive" onClick={() => {
-                                onTransactionDeleted?.(row.original.id);
-                                setDialogOpen(false);
-                                setDropdownOpen(false);
-                            }}>
-                                Eliminar
-                            </Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
+
+                    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>Confirmar eliminación</DialogTitle>
+                                <DialogDescription>
+                                    ¿Estás seguro de que quieres eliminar esta transacción? Esta acción no se puede deshacer.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <DialogFooter>
+                                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                                    Cancelar
+                                </Button>
+                                <Button variant="destructive" onClick={handleDelete}>
+                                    Eliminar
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
+                </>
             )
         },
     },

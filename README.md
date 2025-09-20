@@ -1,8 +1,4 @@
-# SCPP Tauri
-
-Cliente para SCPP en Tauri (multiplataforma) con React y ShadCN. Utilizamos el plugin de Rust HTTP para hacer las request al server para evitar CORS
-
-Guarda datos de la session en el localstorage
+# SCPP Web App
 
 ## Descripción General
 
@@ -47,48 +43,10 @@ Esta aplicación proporciona una solución integral para el seguimiento de gasto
 - **Numeral.js**: Formateo de números
 - **Recharts** (implícito): Visualizaciones de gráficos
 
-### Integración con Backend
-- **Tauri**: Framework de aplicaciones de escritorio
-- **Plugin HTTP**: Comunicación con API
-
-## Estructura del Proyecto
-
-El proyecto sigue una arquitectura basada en componentes con varias pantallas principales:
-
-- **Login.tsx**: Autenticación de usuario
-- **Config.tsx**: Configuración de la aplicación
-- **Dashboard.tsx**: Vista general financiera principal
-- **FoodScreen.tsx**: Gestión de inventario de alimentos
-- **Assets.tsx**: Gestión de documentos/activos
-- **Htas.tsx**: Pantalla de opciones/herramientas
-
-## Primeros Pasos
-
-### Requisitos Previos
-- Node.js
-- Rust (para Tauri)
-
-### Instalación
-1. Clonar el repositorio
-2. Instalar dependencias:
-   ```
-   npm install
-   ```
-3. Ejecutar en modo desarrollo:
-   ```
-   npm run tauri dev
-   ```
-
-### Compilación para Producción
-```
-npm run tauri build
-```
-
 ## Configuración de API
 
 La configuración de la API se gestiona a través de la pantalla de Configuración con:
 - Prefijo API: URL base para la API
-- ID de Sesión: Token de autenticación
 
 ## Uso
 
