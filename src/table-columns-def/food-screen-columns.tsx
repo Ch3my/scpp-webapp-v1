@@ -9,6 +9,7 @@ import {
     DropdownMenuItem,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import numeral from "numeral"
 
 export const columns: ColumnDef<Food>[] = [
     {
@@ -29,7 +30,7 @@ export const columns: ColumnDef<Food>[] = [
         accessorKey: "quantity",
         header: () => <div className="text-right">Cant</div>,
         cell: ({ row }) => {
-            return <div className="text-right">{row.original.quantity}</div>
+            return <div className="text-right">{numeral(row.original.quantity).format("0,0")}</div>
         }
     },
     {

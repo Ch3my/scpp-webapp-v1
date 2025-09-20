@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { DateTime } from "luxon"
 import { useState } from "react"
+import numeral from "numeral"
 
 const accionMapping: { [key: string]: string } = {
     "consumption": "Consumo",
@@ -139,14 +140,14 @@ export const columns: ColumnDef<FoodTransaction>[] = [
         accessorKey: "changeQty",
         header: () => <div className="text-right">Cant</div>,
         cell: ({ row }) => {
-            return <div className="text-right">{row.original.changeQty}</div>
+            return <div className="text-right">{numeral(row.original.changeQty).format("0,0")}</div>
         }
     },
     {
         accessorKey: "remainingQuantity",
         header: () => <div className="text-right">Remnte</div>,
         cell: ({ row }) => {
-            return <div className="text-right">{row.original.remainingQuantity}</div>
+            return <div className="text-right">{numeral(row.original.remainingQuantity).format("0,0")}</div>
         }
     },
     {
