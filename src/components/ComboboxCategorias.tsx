@@ -29,7 +29,7 @@ export function ComboboxCategorias({ value, onChange, disabled }: ComboboxCatego
   const { categorias } = useAppState()
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
