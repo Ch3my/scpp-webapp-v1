@@ -101,7 +101,8 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
             }).then(response => response.json())
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] })
+            queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
+            queryClient.invalidateQueries({ queryKey: ['foods'] });
             toast('Transacción eliminada');
         }
     })
