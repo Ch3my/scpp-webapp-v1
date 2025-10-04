@@ -1,15 +1,14 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
+import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
 import { useAppState } from "@/AppState"
 import {
     ChartConfig,
     ChartContainer,
-    ChartTooltip,
-    ChartTooltipContent,
 } from "@/components/ui/chart"
 import { Skeleton } from "./ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import numeral from "numeral";
 
 const chartConfig = {
     gastos: {
@@ -113,7 +112,6 @@ function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
                 <CardDescription>13 meses</CardDescription>
             </CardHeader>
             <CardContent>
-
                 <ChartContainer config={chartConfig} className="aspect-video">
                     <LineChart
                         data={chartData}
@@ -130,13 +128,40 @@ function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
                         <YAxis
                             domain={[0, yAxisDomainMax]}
                             scale={"linear"}
-                            tickFormatter={(value) =>
-                                new Intl.NumberFormat("en-US").format(value)
-                            }
+                            tickFormatter={(value) => numeral(value).format("0,0")}
                         />
-                        <ChartTooltip
-                            cursor={true}
-                            content={<ChartTooltipContent indicator="line" className="w-48 text-base" />}
+
+                        <Tooltip
+                            shared={false}
+                            offset={30}
+                            content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                    return (
+                                        <div className="rounded-lg border border-muted-foreground bg-background p-3 text-base">
+                                            <span className="font-medium text-foreground uppercase">
+                                                {label}
+                                            </span>
+                                            {payload.map((entry, index) => (
+                                                <div key={index} className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 mr-2">
+                                                        <div
+                                                            className="h-2 w-2 shrink-0 rounded-sm"
+                                                            style={{ backgroundColor: entry.color }}
+                                                        />
+                                                        <span className="text-muted-foreground capitalize">
+                                                            {entry.name}
+                                                        </span>
+                                                    </div>
+                                                    <span className="font-medium text-foreground">
+                                                        {numeral(entry.value).format("0,0")}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    );
+                                }
+                                return null;
+                            }}
                         />
                         {/* Gastos */}
                         <Line

@@ -1,6 +1,5 @@
 import * as React from "react"
 import { DateTime } from "luxon"
-import { useAppState } from "@/AppState"
 import { Button } from "@/components/ui/button"
 import { Filter } from 'lucide-react';
 import {
@@ -14,15 +13,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-    Select,
-    SelectTrigger,
-    SelectValue,
-    SelectContent,
-    SelectItem,
-} from "@/components/ui/select"
 import { DatePicker } from "./DatePicker";
 import { Checkbox } from "./ui/checkbox";
+import { ComboboxCategorias } from "./ComboboxCategorias";
 
 interface FilterDialogProps {
     // Parent passes in Luxon `DateTime` objects
@@ -56,7 +49,6 @@ export function DocsFilters({
     onFiltersChange,
 }: FilterDialogProps) {
     const [open, setOpen] = React.useState(false)
-    const { categorias } = useAppState()
     const [localFechaInicio, setLocalFechaInicio] = React.useState<DateTime>(fechaInicio)
     const [localFechaTermino, setLocalFechaTermino] = React.useState<DateTime>(fechaTermino)
     const [localCategoria, setLocalCategoria] = React.useState<number>(categoria)
@@ -135,7 +127,6 @@ export function DocsFilters({
                         value={localFechaInicio}
                         onChange={(e) => e && setLocalFechaInicio(e)}
                     />
-
                     <Label htmlFor="fecha-termino">
                         Fecha Término
                     </Label>
@@ -143,32 +134,14 @@ export function DocsFilters({
                         value={localFechaTermino}
                         onChange={(e) => e && setLocalFechaTermino(e)}
                     />
-
                     <Label htmlFor="categoria">
                         Categoría
                     </Label>
-                    <Select
-                        // The `Select` from shadcn/ui only accepts strings for `value`.
-                        // Convert our numeric value to string:
-                        value={String(localCategoria)}
-                        // Convert back to number in the onValueChange:
-                        onValueChange={(val) => setLocalCategoria(Number(val))}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar" />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                            <SelectItem value="0">(Todos)</SelectItem>
-                            {categorias.map((cat) => (
-                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                    {cat.descripcion}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-
+                    <ComboboxCategorias
+                        value={localCategoria}
+                        onChange={setLocalCategoria}
+                    />
                 </div>
-
                 <DialogFooter>
                     <Button variant="outline" onClick={() => setOpen(false)}>
                         Salir

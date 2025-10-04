@@ -146,8 +146,9 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             />
                             <ChartTooltip
                                 cursor={false}
-                                position={{ x: 70, y: -70 }}
-                                content={<ChartTooltipContent className="w-48 text-base" formatter={(o: any) => (<div>{numeral(o).format("0,0")}</div>)} />}
+                                offset={25}
+                                // position={{ x: 70, y: -70 }}
+                                content={<ChartTooltipContent className="w-fit text-base border border-muted-foreground" formatter={(o: any) => (<div>{numeral(o).format("0,0")}</div>)} />}
                             />
                             <Bar dataKey="amount" fill="var(--color-desktop)" onClick={handleBarClick} shape={(props: any) => {
                                 return (<rect
