@@ -1,7 +1,7 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
-import { BrowserRouter, Route, Routes } from "react-router";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Toaster } from "./components/ui/sonner";
 import { SidebarProvider, } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
@@ -23,6 +23,7 @@ const queryClient = new QueryClient()
 
 const RootComponent = () => {
   const { isLoggedIn } = useAppState();
+  const location = useLocation();
   const showSidebar = isLoggedIn && location.pathname !== '/';
 
   return (
