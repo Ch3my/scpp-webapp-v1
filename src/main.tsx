@@ -23,13 +23,14 @@ const queryClient = new QueryClient()
 
 const RootComponent = () => {
   const { isLoggedIn } = useAppState();
+  const showSidebar = isLoggedIn && location.pathname !== '/';
 
   return (
     <SidebarProvider defaultOpen={false}>
       <Toaster position="bottom-center" />
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
-          {isLoggedIn && <AppSidebar />}
+          {showSidebar && <AppSidebar />}
           <Routes>
             <Route path="/" element={<App />} />
             <Route path="/login" element={<Login />} />
