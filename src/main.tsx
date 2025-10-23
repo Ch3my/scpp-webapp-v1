@@ -27,28 +27,30 @@ const RootComponent = () => {
   const showSidebar = isLoggedIn && location.pathname !== '/';
 
   return (
-    <SidebarProvider defaultOpen={false}>
-      <Toaster position="bottom-center" />
-      <QueryClientProvider client={queryClient}>
-        <BrowserRouter>
-          {showSidebar && <AppSidebar />}
-          <Routes>
-            <Route path="/" element={<App />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/config" element={<Config />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/htas" element={<Htas />} />
-            <Route path="/assets" element={<Assets />} />
-            <Route path="/food" element={<FoodScreen />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
-    </SidebarProvider>
+    <>
+      {showSidebar && <AppSidebar />}
+      <Routes>
+        <Route path="/" element={<App />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/config" element={<Config />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/htas" element={<Htas />} />
+        <Route path="/assets" element={<Assets />} />
+        <Route path="/food" element={<FoodScreen />} />
+      </Routes>
+    </>
   );
 };
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <RootComponent />
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <SidebarProvider defaultOpen={false}>
+          <Toaster position="bottom-center" />
+          <RootComponent />
+        </SidebarProvider>
+      </BrowserRouter>
+    </QueryClientProvider>
   </React.StrictMode>
 );
