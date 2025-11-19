@@ -135,7 +135,7 @@ const Assets: React.FC = () => {
                                         <TableCell>{asset.descripcion}</TableCell>
                                         <TableCell>{asset.categoria.descripcion}</TableCell>
                                         <TableCell>
-                                            <DropdownMenu>
+                                            <DropdownMenu modal={false}>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" className="h-6 w-8 p-0">
                                                         <span className="sr-only">Open menu</span>
