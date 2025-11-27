@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -37,17 +38,14 @@ import GraficoCategorias from '@/components/GraficoCategorias';
 
 const Dashboard: React.FC = () => {
     const { apiPrefix, sessionId, tipoDocs } = useAppState()
+    const queryClient = useQueryClient();
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
     const [selectedTipoDoc, setSelectedTipoDoc] = useState<number>(1);
     const [selectedDocId, setSelectedDocId] = useState<number>(0);
-    const [totalDocs, setTotalDocs] = useState<number>(0);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const [searchPhraseIgnoreOtherFilters, setSearchPhraseIgnoreOtherFilters] = useState<boolean>(true)
-    const [apiCalling, setApiCalling] = useState<boolean>(true)
-
-    const [docs, setDocs] = useState<any[]>([]);
     const [openDocDialog, setOpenDocDialog] = useState<boolean>(false);
     const monthlyChartRef = useRef<{ refetchData?: () => void }>(null)
     const barChartRef = useRef<{ refetchData?: () => void }>(null)
@@ -55,32 +53,35 @@ const Dashboard: React.FC = () => {
     const percentageRef = useRef<{ refetchData?: () => void }>(null)
     const yearlySumRef = useRef<{ refetchData?: () => void }>(null)
 
-    const getData = async (paramsOverride?: { fechaInicio?: DateTime, fechaTermino?: DateTime, categoria?: number, searchPhrase?: string, tipoDoc?: number, searchPhraseIgnoreOtherFilters?: boolean }) => {
-        setApiCalling(true)
+    const fetchDocs = async () => {
         let params = new URLSearchParams();
         params.set("sessionHash", sessionId);
-        params.set("fechaInicio", (paramsOverride?.fechaInicio || fechaInicio)?.toFormat('yyyy-MM-dd'));
-        params.set("fechaTermino", (paramsOverride?.fechaTermino || fechaTermino)?.toFormat('yyyy-MM-dd'));
-        params.set("searchPhrase", paramsOverride?.searchPhrase !== undefined ? paramsOverride.searchPhrase : searchPhrase);
-        params.set("fk_tipoDoc", (paramsOverride?.tipoDoc || selectedTipoDoc).toString());
-        params.set("searchPhraseIgnoreOtherFilters", (paramsOverride?.searchPhraseIgnoreOtherFilters || searchPhraseIgnoreOtherFilters).toString());
+        params.set("fechaInicio", fechaInicio?.toFormat('yyyy-MM-dd'));
+        params.set("fechaTermino", fechaTermino?.toFormat('yyyy-MM-dd'));
+        params.set("searchPhrase", searchPhrase);
+        params.set("fk_tipoDoc", selectedTipoDoc.toString());
+        params.set("searchPhraseIgnoreOtherFilters", searchPhraseIgnoreOtherFilters.toString());
 
-        // Extract the category value, prioritizing paramsOverride if it exists
-        const categoria = paramsOverride?.categoria ?? selectedCategoria;
-        if (categoria > 0) {
-            params.set("fk_categoria", categoria.toString());
+        if (selectedCategoria > 0) {
+            params.set("fk_categoria", selectedCategoria.toString());
         }
 
-        let data = await fetch(`${apiPrefix}/documentos?${params.toString()}`, {
+        const response = await fetch(`${apiPrefix}/documentos?${params.toString()}`, {
             method: 'GET',
             headers: {
                 'Content-Type': 'application/json'
             }
-        }).then(response => response.json())
-        setDocs(data);
-        setTotalDocs(data.reduce((acc: number, doc: any) => acc + doc.monto, 0))
-        setApiCalling(false)
+        });
+        return response.json();
     }
+
+    const { data: docs = [], isLoading, isFetching } = useQuery({
+        queryKey: ['docs', fechaInicio, fechaTermino, selectedCategoria, searchPhrase, selectedTipoDoc, searchPhraseIgnoreOtherFilters],
+        queryFn: fetchDocs,
+        placeholderData: (previousData) => previousData,
+    });
+
+    const totalDocs = docs.reduce((acc: number, doc: any) => acc + doc.monto, 0)
 
     const handleFiltersChange = (filters: { fechaInicio: DateTime; fechaTermino: DateTime; categoria: number; searchPhrase: string; searchPhraseIgnoreOtherFilters: boolean }) => {
         setFechaInicio(filters.fechaInicio)
@@ -88,13 +89,6 @@ const Dashboard: React.FC = () => {
         setSelectedCategoria(filters.categoria)
         setSearchPhrase(filters.searchPhrase)
         setSearchPhraseIgnoreOtherFilters(filters.searchPhraseIgnoreOtherFilters)
-        getData({
-            fechaInicio: filters.fechaInicio,
-            fechaTermino: filters.fechaTermino,
-            categoria: filters.categoria,
-            searchPhrase: filters.searchPhrase,
-            searchPhraseIgnoreOtherFilters: filters.searchPhraseIgnoreOtherFilters
-        })
     }
 
     const docDialogOpenChange = (e: boolean) => {
@@ -106,7 +100,7 @@ const Dashboard: React.FC = () => {
             percentageRef.current?.refetchData?.()
             radarChartRef.current?.refetchData?.()
             yearlySumRef.current?.refetchData?.()
-            getData()
+            queryClient.invalidateQueries({ queryKey: ['docs'] })
         }
     }
 
@@ -138,12 +132,9 @@ const Dashboard: React.FC = () => {
         setFechaTermino(newFechaTermino);
 
         if (resetAll) {
-            getData({ tipoDoc: parsedTipoDoc, fechaInicio: newFechaInicio, fechaTermino: newFechaTermino, categoria: 0, searchPhrase: "", searchPhraseIgnoreOtherFilters: true });
             setSearchPhraseIgnoreOtherFilters(true)
             setSelectedCategoria(0)
             setSearchPhrase("")
-        } else {
-            getData({ tipoDoc: parsedTipoDoc, fechaInicio: newFechaInicio, fechaTermino: newFechaTermino });
         }
     };
 
@@ -155,12 +146,7 @@ const Dashboard: React.FC = () => {
         setFechaInicio(newFechaInicio);
         setFechaTermino(newFechaTermino);
         setSelectedCategoria(catId)
-        getData({ categoria: catId, fechaInicio: newFechaInicio, fechaTermino: newFechaTermino });
     }
-
-    useEffect(() => {
-        getData()
-    }, []);
 
     return (
         <div className="grid gap-4 p-2 w-screen h-screen grid-docs-layout" >
@@ -194,7 +180,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <Label>Total: ${numeral(totalDocs).format("0,0")}</Label>
 
-                <div className='overflow-auto' >
+                <div className='overflow-auto'>
                     <Table size='compact'>
                         <TableHeader>
                             <TableRow>
@@ -203,13 +189,13 @@ const Dashboard: React.FC = () => {
                                 <TableHead className="text-right">Monto</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody>
-                            {docs.length === 0 && !apiCalling && (
+                        <TableBody style={{ opacity: isFetching ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                            {docs.length === 0 && !isLoading && (
                                 <TableRow className='text-center text-muted-foreground'>
                                     <TableCell colSpan={3}>Sin Datos</TableCell>
                                 </TableRow>)}
-                            {docs.map((doc, index) => (
-                                <TableRow key={index} onClick={() => handleRowClick(doc.id)}>
+                            {docs.map((doc: any, index: number) => (
+                                <TableRow key={index} onClick={() => !isFetching && handleRowClick(doc.id)} style={{ cursor: isFetching ? 'not-allowed' : 'pointer' }}>
                                     <TableCell>{doc.fecha}</TableCell>
                                     <TableCell>{doc.proposito}</TableCell>
                                     <TableCell className="text-right">{numeral(doc.monto).format("0,0")}</TableCell>
