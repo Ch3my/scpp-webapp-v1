@@ -1,4 +1,4 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
 import { useAppState } from "@/AppState"
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
@@ -27,8 +27,11 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     const [thisMonthGastos, setThisMonthGastos] = useState<number>(0);
     const [thisRemanente, setRemanente] = useState<number>(0);
     const [topGastos, setTopGastos] = useState<any[]>([]);
+    const [allTopGastos, setAllTopGastos] = useState<any[]>([]);
     const { apiPrefix, sessionId } = useAppState()
     const [isLoading, setIsLoading] = useState(true)
+    const containerRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLDivElement>(null);
 
     const fetchPercentage = async () => {
         setIsLoading(true)
@@ -51,14 +54,48 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
         setThisMonthGastos(gasto.sumMonto)
         setRemanente(ingresos.sumMonto - gasto.sumMonto)
 
-        setTopGastos(response.topGastos.slice(0, 4))
+        setAllTopGastos(response.topGastos)
         setPercentage(response.porcentajeUsado)
         setIsLoading(false)
+    };
+
+    const calculateVisibleItems = () => {
+        if (!listRef.current) return;
+
+        const listHeight = listRef.current.clientHeight;
+        // Each item is approximately 24px (text-sm line height + gap-1)
+        const itemHeight = 24;
+        const maxItems = Math.max(1, Math.floor(listHeight / itemHeight));
+        const itemsToShow = Math.min(maxItems, allTopGastos.length);
+
+        setTopGastos(allTopGastos.slice(0, itemsToShow));
     };
 
     useEffect(() => {
         fetchPercentage();
     }, []);
+
+    useEffect(() => {
+        if (allTopGastos.length > 0 && listRef.current) {
+            // Use setTimeout to ensure DOM is fully rendered
+            const timeoutId = setTimeout(() => {
+                calculateVisibleItems();
+            }, 100);
+
+            const resizeObserver = new ResizeObserver(() => {
+                calculateVisibleItems();
+            });
+
+            if (listRef.current) {
+                resizeObserver.observe(listRef.current);
+            }
+
+            return () => {
+                clearTimeout(timeoutId);
+                resizeObserver.disconnect();
+            };
+        }
+    }, [allTopGastos]);
 
     // Expose fetchData to parent through the ref
     useImperativeHandle(ref, () => ({
@@ -114,7 +151,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     }
 
     return (
-        <Card className='h-full'>
+        <Card className='h-full flex flex-col'>
             <CardHeader>
                 <div className="grid grid-cols-2">
                     <div>
@@ -156,21 +193,17 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className='grid gap-2'>
-                <div>
-                    <span className="text-muted-foreground">
-                        Top Gastos
-                    </span>
-                    <div className='flex flex-col gap-8 truncate text-sm'>
-                        <div>
-                            {topGastos.map((gasto, index) => (
-                                <div key={index} className="flex justify-between w-full">
-                                    <span className="truncate block max-w-[8rem]">{gasto.proposito}</span>
-                                    <span>{numeral(gasto.monto).format('$0,0')}</span>
-                                </div>
-                            ))}
+            <CardContent className='flex flex-col gap-2 flex-1 overflow-hidden' ref={containerRef}>
+                <span className="text-muted-foreground">
+                    Top Gastos
+                </span>
+                <div className='flex flex-col gap-1 truncate text-sm flex-1 overflow-hidden' ref={listRef}>
+                    {topGastos.map((gasto, index) => (
+                        <div key={index} className="flex justify-between w-full">
+                            <span className="truncate block max-w-[8rem]">{gasto.proposito}</span>
+                            <span>{numeral(gasto.monto).format('$0,0')}</span>
                         </div>
-                    </div>
+                    ))}
                 </div>
             </CardContent>
         </Card>
