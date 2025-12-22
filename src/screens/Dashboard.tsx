@@ -34,6 +34,7 @@ import UsagePercentage from '@/components/UsagePercentaje';
 import CategoriasRadial from '@/components/CategoriasRadial';
 import YearlySum from '@/components/YearlySum';
 import GraficoCategorias from '@/components/GraficoCategorias';
+import ExpensesByCategoryTimeseriesChart from '@/components/ExpensesByCategoryTimeseriesChart';
 
 
 const Dashboard: React.FC = () => {
@@ -52,6 +53,7 @@ const Dashboard: React.FC = () => {
     const radarChartRef = useRef<{ refetchData?: () => void }>(null)
     const percentageRef = useRef<{ refetchData?: () => void }>(null)
     const yearlySumRef = useRef<{ refetchData?: () => void }>(null)
+    const categoryTimeseriesRef = useRef<{ refetchData?: () => void }>(null)
 
     const fetchDocs = async () => {
         let params = new URLSearchParams();
@@ -100,6 +102,7 @@ const Dashboard: React.FC = () => {
             percentageRef.current?.refetchData?.()
             radarChartRef.current?.refetchData?.()
             yearlySumRef.current?.refetchData?.()
+            categoryTimeseriesRef.current?.refetchData?.()
             queryClient.invalidateQueries({ queryKey: ['docs'] })
         }
     }
@@ -214,6 +217,9 @@ const Dashboard: React.FC = () => {
                 <div className="grid gap-2" style={{ gridTemplateColumns: '5fr 3fr' }}>
                     <MonthlyGraphChart ref={monthlyChartRef} />
                     <GraficoCategorias onBarClick={(e) => onBarClick(e)} ref={barChartRef} />
+                </div>
+                <div className="grid gap-2">
+                    <ExpensesByCategoryTimeseriesChart ref={categoryTimeseriesRef} />
                 </div>
             </div>
         </div>

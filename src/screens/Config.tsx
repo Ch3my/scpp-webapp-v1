@@ -24,9 +24,6 @@ export default function Config() {
         setApiPrefix(localApiPrefix)
         setSessionId(localSessionId)
 
-        localStorage.setItem("apiPrefix", localApiPrefix)
-        localStorage.setItem("sessionId", localSessionId)
-
         toast("Guardado Correctamemnte")
     }
 
@@ -46,7 +43,7 @@ export default function Config() {
                             </div>
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="sessionId">SessionId</Label>
-                                <Input id="sessionId" onChange={e => setLocalSessionId(e.target.value)} />
+                                <Input id="sessionId" onChange={e => setLocalSessionId(e.target.value)} value={localSessionId} />
                             </div>
                         </div>
                     </form>

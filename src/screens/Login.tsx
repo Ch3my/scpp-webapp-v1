@@ -39,10 +39,8 @@ export default function Login() {
             toast("Error al Iniciar Sesion", { description: response.errorDescription[0] })
             return
         }
-        localStorage.setItem("sessionId", response.sessionHash)
-        localStorage.setItem("isLoggedIn", "true")
-        setLoggedIn(true)
         setSessionId(response.sessionHash)
+        setLoggedIn(true)
 
         await Promise.all([fetchCategorias(), fetchTipoDocs()]);
 

@@ -25,8 +25,6 @@ export function Htas() {
             }).then(response => response.json())
 
             // TODO Check Error
-            localStorage.removeItem("sessionId")
-            localStorage.setItem("isLoggedIn", "false")
             setLoggedIn(false)
             setSessionId("")
             navigate("/login")
