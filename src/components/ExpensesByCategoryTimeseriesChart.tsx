@@ -200,7 +200,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                         accessibilityLayer
                         data={chartData}
                         margin={{
-                            top: 20,
+                            top: 30,
                             left: 50,
                             right: 50,
                         }}

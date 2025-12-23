@@ -153,7 +153,7 @@ const Dashboard: React.FC = () => {
 
     return (
         <div className="grid gap-4 p-2 w-screen h-screen grid-docs-layout" >
-            <div className="flex flex-col overflow-auto">
+            <div className="flex flex-col overflow-auto h-full">
                 <ScreenTitle title="Dashboard" />
                 <div className='flex gap-2 px-1 mb-2'>
                     <Button variant="outline" onClick={handleNewDocBtn}>
@@ -208,7 +208,7 @@ const Dashboard: React.FC = () => {
                     </Table>
                 </div>
             </div>
-            <div className="grid gap-2">
+            <div className="grid gap-2 overflow-auto h-full">
                 <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "5fr 3fr 6fr" }} >
                     <UsagePercentage ref={percentageRef} />
                     <YearlySum ref={yearlySumRef} />
