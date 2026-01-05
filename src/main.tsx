@@ -6,7 +6,6 @@ import { Toaster } from "./components/ui/sonner";
 import { SidebarProvider, } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { useAppState } from "./AppState";
-import Dashboard from "./screens/Dashboard";
 import { Skeleton } from "./components/ui/skeleton";
 import {
   QueryClient,
@@ -15,12 +14,13 @@ import {
 import "./App.css";
 import "./Custom.css";
 
-// Lazy load screens
+// Lazy load all screens (including Dashboard)
 const Login = lazy(() => import("./screens/Login"));
 const Config = lazy(() => import("./screens/Config"));
 const Htas = lazy(() => import("./screens/Htas").then(module => ({ default: module.Htas })));
 const Assets = lazy(() => import("./screens/Assets"));
 const FoodScreen = lazy(() => import("./screens/FoodScreen"));
+const Dashboard = lazy(() => import("./screens/Dashboard"));
 
 const queryClient = new QueryClient()
 

@@ -11,7 +11,7 @@ export default defineConfig(async () => ({
         manualChunks: (id: string) => {
           // Vendor chunks for third-party libraries
           if (id.includes('node_modules')) {
-            if (id.includes('recharts')) return 'chart';
+            // Don't split recharts - it has circular dependencies that break when chunked
             if (id.includes('react-query') || id.includes('@tanstack/query')) return 'react-query';
             if (id.includes('react-router') || id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
             if (id.includes('@radix-ui')) return 'radix';
