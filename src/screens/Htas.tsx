@@ -10,7 +10,7 @@ import {
     CardTitle,
 } from "@/components/ui/card"
 
-export function Htas() {
+function Htas() {
     const { apiPrefix, sessionId, setLoggedIn, setSessionId } = useAppState();
     let navigate = useNavigate();
 
@@ -48,3 +48,5 @@ export function Htas() {
         </div>
     )
 }
+
+export default Htas;

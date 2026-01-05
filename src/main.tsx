@@ -19,7 +19,7 @@ import "./Custom.css";
 // Lazy load other screens
 const Login = lazy(() => import("./screens/Login"));
 const Config = lazy(() => import("./screens/Config"));
-const Htas = lazy(() => import("./screens/Htas").then(module => ({ default: module.Htas })));
+const Htas = lazy(() => import("./screens/Htas"));
 const Assets = lazy(() => import("./screens/Assets"));
 const FoodScreen = lazy(() => import("./screens/FoodScreen"));
 
