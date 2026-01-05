@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useState } from "react";
 import { useAppState } from "@/AppState";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
@@ -11,6 +11,8 @@ import { Skeleton } from "./ui/skeleton";
 import numeral from "numeral";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { DateTime } from "luxon";
+import { useQuery } from "@tanstack/react-query";
+import { Button } from "./ui/button";
 
 const chartConfig = {
     desktop: {
@@ -21,7 +23,7 @@ const chartConfig = {
 
 
 interface GraficoCategoriasProps {
-    onBarClick?: (catId: number) => void;
+    onBarClick?: (catId: number, nMonths: number) => void;
 }
 
 export interface GraficoCategoriasRef {
@@ -38,65 +40,60 @@ interface ChartDataItem {
 const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasProps>(
     function GraficoCategorias(props, ref) {
         const { onBarClick } = props;
-        const [chartData, setChartData] = useState<ChartDataItem[]>([]);
-        const [isLoading, setIsLoading] = useState(true)
-        const [range, setRange] = useState<{ start: DateTime; end: DateTime }>({ start: DateTime.now(), end: DateTime.now() })
         const [hover, setHover] = useState<number | null>(null)
+        const [nMonths, setNMonths] = useState<number>(3);
         const { apiPrefix, sessionId } = useAppState();
 
         const fetchData = async () => {
-            try {
-                // setIsLoading(true)
-                const params = new URLSearchParams();
-                params.set("sessionHash", sessionId);
-                params.set("nMonths", "12");
+            const params = new URLSearchParams();
+            params.set("sessionHash", sessionId);
+            params.set("nMonths", nMonths.toString());
 
-                const response = await fetch(
-                    `${apiPrefix}/expenses-by-category?${params.toString()}`,
-                    {
-                        method: "GET",
-                        headers: {
-                            "Content-Type": "application/json",
-                        },
-                    }
-                );
-                const result = await response.json();
+            const response = await fetch(
+                `${apiPrefix}/expenses-by-category?${params.toString()}`,
+                {
+                    method: "GET",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            const result = await response.json();
 
-                // Transform the raw data into the shape Recharts needs
-                // We’ll use the `data` array from the response:
-                // Each item has { label, data, catId }
-                const newChartData: ChartDataItem[] = result.data.slice(0, 8).map((item: any) => ({
-                    category: item.label, // e.g. "Vivienda"
-                    amount: item.data, // e.g. 4283327
-                    catId: item.catId, // optional if you need it for any additional logic
-                }));
+            // Transform the raw data into the shape Recharts needs
+            // We'll use the `data` array from the response:
+            // Each item has { label, data, catId }
+            const chartData: ChartDataItem[] = result.data.map((item: any) => ({
+                category: item.label, // e.g. "Vivienda"
+                amount: item.data, // e.g. 4283327
+                catId: item.catId, // optional if you need it for any additional logic
+            }));
 
-                setChartData(newChartData);
-                setRange({
-                    start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
-                    end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
-                });
-            } catch (error) {
-                console.error("Error fetching chart data:", error);
-            }
-            if (isLoading) {
-                setIsLoading(false)
-            }
+            const range = {
+                start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
+                end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
+            };
+
+            return { chartData, range };
         };
+
+        const { data, isLoading, refetch } = useQuery({
+            queryKey: ['expenses-by-category', sessionId, nMonths],
+            queryFn: fetchData,
+        });
+
+        const chartData = data?.chartData || [];
+        const range = data?.range || { start: DateTime.now(), end: DateTime.now() };
 
         useImperativeHandle(ref, () => ({
             refetchData: () => {
-                fetchData()
+                refetch()
             }
         }));
 
-        useEffect(() => {
-            fetchData();
-        }, []);
-
         const handleBarClick = (data: any) => {
             if (onBarClick) {
-                onBarClick(data.catId);
+                onBarClick(data.catId, nMonths);
             }
         };
 
@@ -104,8 +101,36 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
             return (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Gastos por Categorias</CardTitle>
-                        <CardDescription>13 meses</CardDescription>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Gastos por Categorias</CardTitle>
+                            <div className="flex gap-0.5">
+                                <Button
+                                    variant={nMonths === 3 ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setNMonths(3)}
+                                    className="h-6 px-2 text-xs"
+                                >
+                                    3M
+                                </Button>
+                                <Button
+                                    variant={nMonths === 6 ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setNMonths(6)}
+                                    className="h-6 px-2 text-xs"
+                                >
+                                    6M
+                                </Button>
+                                <Button
+                                    variant={nMonths === 13 ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setNMonths(13)}
+                                    className="h-6 px-2 text-xs"
+                                >
+                                    13M
+                                </Button>
+                            </div>
+                        </div>
+                        <CardDescription>{nMonths} meses</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Skeleton className="aspect-square" />
@@ -123,7 +148,35 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Gastos por Categorias</CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>Gastos por Categorias</CardTitle>
+                        <div className="flex gap-0.5">
+                            <Button
+                                variant={nMonths === 3 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(3)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                3M
+                            </Button>
+                            <Button
+                                variant={nMonths === 6 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(6)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                6M
+                            </Button>
+                            <Button
+                                variant={nMonths === 12 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(12)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                13M
+                            </Button>
+                        </div>
+                    </div>
                     <CardDescription>{range.start.toLocaleString({ month: 'long', year: 'numeric' })} - {range.end.toLocaleString({ month: 'long', year: 'numeric' })}</CardDescription>
                 </CardHeader>
                 <CardContent>

@@ -8,10 +8,27 @@ export default defineConfig(async () => ({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
-          chart: ['recharts'],
-          utils: ["react-image-file-resizer", "react-day-picker", "numeral", "luxon", "zustand", "axios"],
-          radix: ["@radix-ui/react-checkbox", "@radix-ui/react-dialog", "@radix-ui/react-dropdown-menu", "@radix-ui/react-hover-card", "@radix-ui/react-label", "@radix-ui/react-popover", "@radix-ui/react-select", "@radix-ui/react-separator", "@radix-ui/react-slot", "@radix-ui/react-switch", "@radix-ui/react-tooltip"]
+        manualChunks: (id: string) => {
+          // Vendor chunks for third-party libraries
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts')) return 'chart';
+            if (id.includes('react-query') || id.includes('@tanstack/query')) return 'react-query';
+            if (id.includes('react-router') || id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
+            if (id.includes('@radix-ui')) return 'radix';
+            if (id.includes('react-image-file-resizer') ||
+                id.includes('react-day-picker') ||
+                id.includes('numeral') ||
+                id.includes('luxon') ||
+                id.includes('zustand') ||
+                id.includes('axios')) return 'utils';
+          }
+
+          // Split Dashboard components separately since it's always loaded
+          if (id.includes('/src/screens/Dashboard')) return 'dashboard';
+          if (id.includes('/src/components/') &&
+              (id.includes('Chart') || id.includes('Graph') || id.includes('Categories'))) {
+            return 'dashboard-charts';
+          }
         }
       },
     },

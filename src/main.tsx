@@ -1,23 +1,26 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Toaster } from "./components/ui/sonner";
 import { SidebarProvider, } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
-import Login from "./screens/Login";
-import Config from "./screens/Config";
-import FoodScreen from "./screens/FoodScreen";
 import { useAppState } from "./AppState";
 import Dashboard from "./screens/Dashboard";
-import { Htas } from "./screens/Htas";
-import Assets from "./screens/Assets";
+import { Skeleton } from "./components/ui/skeleton";
 import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query'
 import "./App.css";
 import "./Custom.css";
+
+// Lazy load screens
+const Login = lazy(() => import("./screens/Login"));
+const Config = lazy(() => import("./screens/Config"));
+const Htas = lazy(() => import("./screens/Htas").then(module => ({ default: module.Htas })));
+const Assets = lazy(() => import("./screens/Assets"));
+const FoodScreen = lazy(() => import("./screens/FoodScreen"));
 
 const queryClient = new QueryClient()
 
@@ -29,15 +32,29 @@ const RootComponent = () => {
   return (
     <>
       {showSidebar && <AppSidebar />}
-      <Routes>
-        <Route path="/" element={<App />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/config" element={<Config />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/htas" element={<Htas />} />
-        <Route path="/assets" element={<Assets />} />
-        <Route path="/food" element={<FoodScreen />} />
-      </Routes>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-screen w-screen p-8">
+          <div className="w-full max-w-4xl space-y-4">
+            <Skeleton className="h-12 w-3/4" />
+            <Skeleton className="h-64 w-full" />
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-5/6" />
+            </div>
+          </div>
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={<App />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/config" element={<Config />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/htas" element={<Htas />} />
+          <Route path="/assets" element={<Assets />} />
+          <Route path="/food" element={<FoodScreen />} />
+        </Routes>
+      </Suspense>
     </>
   );
 };

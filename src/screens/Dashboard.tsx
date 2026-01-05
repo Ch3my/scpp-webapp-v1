@@ -141,10 +141,10 @@ const Dashboard: React.FC = () => {
         }
     };
 
-    const onBarClick = async (catId: number) => {
+    const onBarClick = async (catId: number, nMonths: number) => {
         let newFechaInicio = fechaInicio;
         let newFechaTermino = fechaTermino;
-        newFechaInicio = DateTime.now().minus({ months: 12 }).startOf('month');
+        newFechaInicio = DateTime.now().minus({ months: nMonths }).startOf('month');
         newFechaTermino = DateTime.now().endOf('month');
         setFechaInicio(newFechaInicio);
         setFechaTermino(newFechaTermino);
@@ -216,7 +216,7 @@ const Dashboard: React.FC = () => {
                 </div>
                 <div className="grid gap-2" style={{ gridTemplateColumns: '5fr 3fr' }}>
                     <MonthlyGraphChart ref={monthlyChartRef} />
-                    <GraficoCategorias onBarClick={(e) => onBarClick(e)} ref={barChartRef} />
+                    <GraficoCategorias onBarClick={(catId, nMonths) => onBarClick(catId, nMonths)} ref={barChartRef} />
                 </div>
                 <div className="grid gap-2">
                     <ExpensesByCategoryTimeseriesChart ref={categoryTimeseriesRef} />
