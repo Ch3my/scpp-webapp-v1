@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,13 +28,14 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import MonthlyGraphChart from '@/components/MonthlyGraphChart';
-// import GraficoCategorias from '@/components/GraficoCategorias';
-import UsagePercentage from '@/components/UsagePercentaje';
-import CategoriasRadial from '@/components/CategoriasRadial';
-import YearlySum from '@/components/YearlySum';
-import GraficoCategorias from '@/components/GraficoCategorias';
-import ExpensesByCategoryTimeseriesChart from '@/components/ExpensesByCategoryTimeseriesChart';
+
+// Lazy load chart components to reduce initial bundle
+const MonthlyGraphChart = lazy(() => import('@/components/MonthlyGraphChart'));
+const UsagePercentage = lazy(() => import('@/components/UsagePercentaje'));
+const CategoriasRadial = lazy(() => import('@/components/CategoriasRadial'));
+const YearlySum = lazy(() => import('@/components/YearlySum'));
+const GraficoCategorias = lazy(() => import('@/components/GraficoCategorias'));
+const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/ExpensesByCategoryTimeseriesChart'));
 
 
 const Dashboard: React.FC = () => {
@@ -209,18 +210,24 @@ const Dashboard: React.FC = () => {
                 </div>
             </div>
             <div className="grid gap-2 overflow-auto h-full">
-                <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "5fr 3fr 6fr" }} >
-                    <UsagePercentage ref={percentageRef} />
-                    <YearlySum ref={yearlySumRef} />
-                    <CategoriasRadial ref={radarChartRef} />
-                </div>
-                <div className="grid gap-2" style={{ gridTemplateColumns: '5fr 3fr' }}>
-                    <MonthlyGraphChart ref={monthlyChartRef} />
-                    <GraficoCategorias onBarClick={(catId, nMonths) => onBarClick(catId, nMonths)} ref={barChartRef} />
-                </div>
-                <div className="grid gap-2">
-                    <ExpensesByCategoryTimeseriesChart ref={categoryTimeseriesRef} />
-                </div>
+                <Suspense fallback={null}>
+                    <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "5fr 3fr 6fr" }} >
+                        <UsagePercentage ref={percentageRef} />
+                        <YearlySum ref={yearlySumRef} />
+                        <CategoriasRadial ref={radarChartRef} />
+                    </div>
+                </Suspense>
+                <Suspense fallback={null}>
+                    <div className="grid gap-2" style={{ gridTemplateColumns: '5fr 3fr' }}>
+                        <MonthlyGraphChart ref={monthlyChartRef} />
+                        <GraficoCategorias onBarClick={(catId, nMonths) => onBarClick(catId, nMonths)} ref={barChartRef} />
+                    </div>
+                </Suspense>
+                <Suspense fallback={null}>
+                    <div className="grid gap-2">
+                        <ExpensesByCategoryTimeseriesChart ref={categoryTimeseriesRef} />
+                    </div>
+                </Suspense>
             </div>
         </div>
     );
