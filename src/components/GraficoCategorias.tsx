@@ -13,6 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { DateTime } from "luxon";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "./ui/button";
+import { ButtonGroup } from "./ui/button-group";
 
 const chartConfig = {
     desktop: {
@@ -103,7 +104,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>Gastos por Categorias</CardTitle>
-                            <div className="flex gap-0.5">
+                            <ButtonGroup>
                                 <Button
                                     variant={nMonths === 3 ? "default" : "outline"}
                                     size="sm"
@@ -128,7 +129,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                                 >
                                     13M
                                 </Button>
-                            </div>
+                            </ButtonGroup>
                         </div>
                         <CardDescription>{nMonths} meses</CardDescription>
                     </CardHeader>
@@ -150,7 +151,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle>Gastos por Categorias</CardTitle>
-                        <div className="flex gap-0.5">
+                        <ButtonGroup>
                             <Button
                                 variant={nMonths === 3 ? "default" : "outline"}
                                 size="sm"
@@ -175,7 +176,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             >
                                 13M
                             </Button>
-                        </div>
+                        </ButtonGroup>
                     </div>
                     <CardDescription>{range.start.toLocaleString({ month: 'long', year: 'numeric' })} - {range.end.toLocaleString({ month: 'long', year: 'numeric' })}</CardDescription>
                 </CardHeader>
