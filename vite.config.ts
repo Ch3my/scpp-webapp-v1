@@ -22,13 +22,6 @@ export default defineConfig(async () => ({
                 id.includes('zustand') ||
                 id.includes('axios')) return 'utils';
           }
-
-          // Split Dashboard components separately since it's always loaded
-          if (id.includes('/src/screens/Dashboard')) return 'dashboard';
-          if (id.includes('/src/components/') &&
-              (id.includes('Chart') || id.includes('Graph') || id.includes('Categories'))) {
-            return 'dashboard-charts';
-          }
         }
       },
     },
