@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { useAppState } from "@/AppState";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import {
@@ -14,6 +14,7 @@ import { DateTime } from "luxon";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
+import { Slider } from "./ui/slider";
 
 const chartConfig = {
     desktop: {
@@ -38,11 +39,14 @@ interface ChartDataItem {
 }
 
 
+const MIN_CATEGORIES = 3;
+
 const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasProps>(
     function GraficoCategorias(props, ref) {
         const { onBarClick } = props;
         const [hover, setHover] = useState<number | null>(null)
         const [nMonths, setNMonths] = useState<number>(3);
+        const [visibleCount, setVisibleCount] = useState<number | null>(null);
         const { apiPrefix, sessionId } = useAppState();
 
         const fetchData = async () => {
@@ -83,8 +87,21 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
             queryFn: fetchData,
         });
 
-        const chartData = data?.chartData || [];
+        const allChartData = data?.chartData || [];
         const range = data?.range || { start: DateTime.now(), end: DateTime.now() };
+
+        // Calculate the actual visible count: use state if set, otherwise 60% of total
+        const totalCategories = allChartData.length;
+        const effectiveVisibleCount = useMemo(() => {
+            if (visibleCount !== null) return visibleCount;
+            if (totalCategories === 0) return MIN_CATEGORIES;
+            return Math.max(MIN_CATEGORIES, Math.round(totalCategories * 0.6));
+        }, [visibleCount, totalCategories]);
+
+        // Slice the data to show only the visible categories
+        const chartData = useMemo(() => {
+            return allChartData.slice(0, effectiveVisibleCount);
+        }, [allChartData, effectiveVisibleCount]);
 
         useImperativeHandle(ref, () => ({
             refetchData: () => {
@@ -223,6 +240,21 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             }} />
                         </BarChart>
                     </ChartContainer>
+                    {totalCategories > MIN_CATEGORIES && (
+                        <div className="mt-4 flex items-center gap-3">
+                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                                {effectiveVisibleCount} / {totalCategories}
+                            </span>
+                            <Slider
+                                value={[effectiveVisibleCount]}
+                                onValueChange={(value) => setVisibleCount(value[0])}
+                                min={MIN_CATEGORIES}
+                                max={totalCategories}
+                                step={1}
+                                className="flex-1 [&>span:first-child]:h-1.5 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border [&_[role=slider]]:transition-transform [&_[role=slider]:hover]:scale-125"
+                            />
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         )
