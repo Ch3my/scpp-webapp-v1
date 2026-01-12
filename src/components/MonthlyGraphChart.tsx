@@ -13,15 +13,15 @@ import numeral from "numeral";
 const chartConfig = {
     gastos: {
         label: "Gastos",
-        color: "hsl(var(--chart-5))",
+        color: "oklch(0.65 0.2 27)", // red
     },
     ingresos: {
         label: "Ingresos",
-        color: "hsl(var(--chart-1))",
+        color: "oklch(0.55 0.15 250)", // blue
     },
     ahorros: {
         label: "Ahorros",
-        color: "hsl(var(--chart-3))",
+        color: "oklch(0.8 0.15 85)", // yellow
     },
 } satisfies ChartConfig
 

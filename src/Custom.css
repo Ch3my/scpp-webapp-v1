@@ -1,6 +1,10 @@
+html {
+    font-size: 17px;
+}
+
 * {
     scrollbar-width: thin;
-    scrollbar-color: hsl(var(--muted-foreground)) hsl(var(--muted));
+    scrollbar-color: var(--muted-foreground) var(--muted);
 }
 
 .grid-docs-layout {

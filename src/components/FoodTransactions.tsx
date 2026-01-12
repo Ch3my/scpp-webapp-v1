@@ -137,7 +137,7 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
                         <TableRow key={headerGroup.id}>
                             {headerGroup.headers.map((header) => {
                                 return (
-                                    <TableHead key={header.id}>
+                                    <TableHead key={header.id} style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}>
                                         {header.isPlaceholder
                                             ? null
                                             : flexRender(

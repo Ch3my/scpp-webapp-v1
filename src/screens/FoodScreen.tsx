@@ -13,6 +13,7 @@ import FoodItemRecord from '@/components/FoodItemRecord';
 import FoodTransactionRecord from '@/components/FoodTransactionRecord';
 
 import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
 import { useQueryClient } from '@tanstack/react-query';
 
 const FoodScreen: React.FC = () => {
@@ -51,7 +52,7 @@ const FoodScreen: React.FC = () => {
     }
 
     return (
-        <div className="grid gap-4 p-2 w-screen h-screen overflow-hidden" style={{ gridTemplateColumns: "1fr 2fr" }}>
+        <div className="grid gap-4 p-2 w-screen h-screen overflow-hidden" style={{ gridTemplateColumns: "1fr auto 2fr" }}>
             <div className='flex flex-col gap-2 overflow-y-auto'>
                 <ScreenTitle title='Food Storage' />
                 <div className='flex gap-2'>
@@ -66,6 +67,7 @@ const FoodScreen: React.FC = () => {
                     onOpenFoodItemDialog={setOpenFoodItemDialog}
                 />
             </div>
+            <Separator orientation="vertical" className="h-auto" />
             <div className='flex flex-col gap-2 overflow-auto'>
                 <ScreenTitle title='Transacciones' />
                 <div className='flex items-center justify-between'>

@@ -1,5 +1,5 @@
 import { Home, Settings, SquarePlay, Wheat } from "lucide-react"
-import { Link } from "react-router"
+import { Link, useLocation } from "react-router"
 
 import {
   Sidebar,
@@ -37,6 +37,8 @@ const items = [
 ]
 
 export function AppSidebar() {
+  const location = useLocation()
+
   return (
     <Sidebar collapsible="icon">
       <SidebarContent>
@@ -46,7 +48,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
+                  <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <Link to={item.url}>
                       <item.icon />
                       <span>{item.title}</span>

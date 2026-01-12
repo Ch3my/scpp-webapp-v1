@@ -106,7 +106,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
 
     if (isLoading) {
         return (
-            <Card className='h-full'  >
+            <Card className='h-full'>
                 <CardHeader>
                     <div className="grid grid-cols-2">
                         <div>
@@ -151,7 +151,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     }
 
     return (
-        <Card className='h-full flex flex-col'>
+        <Card className='h-full flex flex-col overflow-hidden'>
             <CardHeader>
                 <div className="grid grid-cols-2">
                     <div>
@@ -197,11 +197,11 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
                 <span className="text-muted-foreground">
                     Top Gastos
                 </span>
-                <div className='flex flex-col gap-1 truncate text-sm flex-1 overflow-hidden' ref={listRef}>
+                <div className='flex flex-col gap-1 text-sm flex-1 overflow-hidden w-full' ref={listRef}>
                     {topGastos.map((gasto, index) => (
-                        <div key={index} className="flex justify-between w-full">
-                            <span className="truncate block max-w-[8rem]">{gasto.proposito}</span>
-                            <span>{numeral(gasto.monto).format('$0,0')}</span>
+                        <div key={index} className="flex gap-2 overflow-hidden">
+                            <span className="truncate">{gasto.proposito}</span>
+                            <span className="shrink-0 tabular-nums ml-auto">{numeral(gasto.monto).format('$0,0')}</span>
                         </div>
                     ))}
                 </div>

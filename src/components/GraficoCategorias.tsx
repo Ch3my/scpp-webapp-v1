@@ -19,7 +19,7 @@ import { Slider } from "./ui/slider";
 const chartConfig = {
     desktop: {
         label: "Desktop",
-        color: "hsl(var(--chart-1))",
+        color: "var(--chart-1)",
     },
 } satisfies ChartConfig
 
@@ -204,7 +204,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             data={chartData}
                             layout="vertical"
                             margin={{
-                                left: 25
+                                left: 35
                             }}
                         >
                             <XAxis type="number" dataKey="amount" hide domain={[0, xAxisDomainMax]} />

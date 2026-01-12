@@ -35,7 +35,7 @@ const calculateIcon = (bestBefore: DateTime | null) => {
     const today = DateTime.now()
     const diff = bestBefore.diff(today, ['days']).days
     if (diff < 60) {
-        return <Skull size={24} />
+        return <Skull size={20} />
     } else {
         return
     }
@@ -44,6 +44,7 @@ const calculateIcon = (bestBefore: DateTime | null) => {
 export const columns: ColumnDef<FoodTransaction>[] = [
     {
         accessorKey: "bestBefore",
+        size: 90,
         header: ({ column }) => {
             return (
                 <Button
@@ -52,11 +53,11 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                 >
                     Vencimiento
                     {column.getIsSorted() === 'asc' ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ArrowUp className="ml-1 h-4 w-4" />
                     ) : column.getIsSorted() === 'desc' ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ArrowDown className="ml-1 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-4 w-4" />
                     )}
                 </Button>
             )
@@ -74,6 +75,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
     },
     {
         id: "icon",
+        size: 25,
         cell: ({ row }) => {
             return calculateIcon(row.original.bestBefore);
         }
@@ -88,11 +90,11 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                 >
                     Nombre
                     {column.getIsSorted() === 'asc' ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
+                        <ArrowUp className="ml-1 h-4 w-4" />
                     ) : column.getIsSorted() === 'desc' ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                        <ArrowDown className="ml-1 h-4 w-4" />
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-4 w-4" />
                     )}
                 </Button>
             )
@@ -109,11 +111,11 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                     >
                         Cod
                         {column.getIsSorted() === 'asc' ? (
-                            <ArrowUp className="ml-2 h-4 w-4" />
+                            <ArrowUp className="ml-1 h-4 w-4" />
                         ) : column.getIsSorted() === 'desc' ? (
-                            <ArrowDown className="ml-2 h-4 w-4" />
+                            <ArrowDown className="ml-1 h-4 w-4" />
                         ) : (
-                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                            <ArrowUpDown className="ml-1 h-4 w-4" />
                         )}
                     </Button>
                 </div>
@@ -123,9 +125,9 @@ export const columns: ColumnDef<FoodTransaction>[] = [
             return (
                 <div className="text-center">
                     {!row.original.code ? (
-                        <Badge variant="secondary" className="bg-slate-500 dark:bg-slate-700" >N/A</Badge>
+                        <Badge variant="outline" className="bg-slate-500 dark:bg-slate-700" >N/A</Badge>
                     ) : (
-                        <Badge variant="secondary" className="bg-orange-500  dark:bg-orange-900" >{row.original.code}</Badge>
+                        <Badge variant="outline" className="bg-orange-500  dark:bg-orange-900 " >{row.original.code}</Badge>
                     )}
                 </div>
             )

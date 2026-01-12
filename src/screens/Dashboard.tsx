@@ -211,7 +211,7 @@ const Dashboard: React.FC = () => {
             </div>
             <div className="grid gap-2 overflow-auto h-full">
                 <Suspense fallback={null}>
-                    <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "5fr 3fr 6fr" }} >
+                    <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "minmax(16rem, 5fr) 3fr 6fr" }} >
                         <UsagePercentage ref={percentageRef} />
                         <YearlySum ref={yearlySumRef} />
                         <CategoriasRadial ref={radarChartRef} />
