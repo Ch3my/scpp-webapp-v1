@@ -2,6 +2,7 @@ import { FoodTransaction } from "@/models/FoodTransaction"
 import { ColumnDef } from "@tanstack/react-table"
 import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import {
     Dialog,
     DialogContent,
@@ -101,19 +102,32 @@ export const columns: ColumnDef<FoodTransaction>[] = [
         accessorKey: "code",
         header: ({ column }) => {
             return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Cod
-                    {column.getIsSorted() === 'asc' ? (
-                        <ArrowUp className="ml-2 h-4 w-4" />
-                    ) : column.getIsSorted() === 'desc' ? (
-                        <ArrowDown className="ml-2 h-4 w-4" />
+                <div className="text-center">
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Cod
+                        {column.getIsSorted() === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : column.getIsSorted() === 'desc' ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                    </Button>
+                </div>
+            )
+        },
+        cell: ({ row }) => {
+            return (
+                <div className="text-center">
+                    {!row.original.code ? (
+                        <Badge variant="secondary" className="bg-slate-500 dark:bg-slate-700" >N/A</Badge>
                     ) : (
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <Badge variant="secondary" className="bg-orange-500  dark:bg-orange-900" >{row.original.code}</Badge>
                     )}
-                </Button>
+                </div>
             )
         },
     },
@@ -125,7 +139,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
         accessorKey: "transactionType",
         header: "Tipo",
         cell: ({ row }) => {
-            return accionMapping[row.original.transactionType];
+            return <Badge variant="outline" className="bg-slate-800">{accionMapping[row.original.transactionType]}</Badge>;
         }
     },
     {
