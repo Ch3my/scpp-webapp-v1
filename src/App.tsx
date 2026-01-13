@@ -6,17 +6,17 @@ import LoadingCircle from "./components/LoadingCircle";
 
 export default function App() {
   let navigate = useNavigate();
-  const { apiPrefix, sessionId, setLoggedIn, setApiPrefix, setSessionId, fetchCategorias, fetchTipoDocs } = useAppState()
+  const { apiPrefix, sessionId, setLoggedIn, fetchCategorias, fetchTipoDocs } = useAppState()
 
   useEffect(() => {
-    async function checkLoginStatus() {
-      if (!apiPrefix || !sessionId) {
-        setLoggedIn(false)
-        navigate("/login")
-        return
-      }
-      setApiPrefix(apiPrefix)
+    // Early exit - no need for loading screen
+    if (!apiPrefix || !sessionId) {
+      setLoggedIn(false)
+      navigate("/login")
+      return
+    }
 
+    async function checkLoginStatus() {
       const check = await fetch(`${apiPrefix}/check-session?sessionHash=${sessionId}`, {
         method: 'GET',
         headers: {
@@ -30,7 +30,6 @@ export default function App() {
         return
       }
 
-      setSessionId(sessionId)
       setLoggedIn(true)
 
       await Promise.all([fetchCategorias(), fetchTipoDocs()]);
