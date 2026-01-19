@@ -111,6 +111,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
             handleDialogChange(false);
             toast('Documento Eliminado');
         },
@@ -131,6 +132,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
+            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
             handleDialogChange(false);
             toast(isEditMode ? 'Documento Actualizado' : 'Documento Agregado');
         },

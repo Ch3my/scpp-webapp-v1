@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useState } from "react"
+import { forwardRef, useImperativeHandle } from "react"
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
 import { useAppState } from "@/AppState"
@@ -9,6 +9,9 @@ import {
 import { Skeleton } from "./ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import numeral from "numeral";
+import { useQuery } from "@tanstack/react-query";
+
+Settings.defaultLocale = "es";
 
 const chartConfig = {
     gastos: {
@@ -26,67 +29,44 @@ const chartConfig = {
 } satisfies ChartConfig
 
 function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
-    const { apiPrefix, sessionId } = useAppState() // from your context
+    const { apiPrefix, sessionId } = useAppState()
 
-    // We store the fetched data as "any" without a specific interface/type
-    const [monthlyGraphData, setMonthlyGraphData] = useState<any>({
-        labels: [],
-        gastosDataset: [],
-        ingresosDataset: [],
-        ahorrosDataset: [],
-    })
-
-    const [isLoading, setIsLoading] = useState(true)
-
-    const fetchData = useCallback(async () => {
-        try {
-            let params = new URLSearchParams();
+    const { data: monthlyGraphData, isLoading, refetch } = useQuery({
+        queryKey: ['dashboard', 'monthly-graph'],
+        queryFn: async () => {
+            const params = new URLSearchParams();
             params.set("sessionHash", sessionId);
             params.set("nMonths", "13");
             const response = await fetch(`${apiPrefix}/monthly-graph?${params.toString()}`, {
                 method: "GET",
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json())
-
-            setMonthlyGraphData(response)
-        } catch (err: any) {
-            console.error("Error fetching data:", err)
-        } finally {
-            if (isLoading) {
-                setIsLoading(false)
-            }
-        }
-    }, [apiPrefix, sessionId])
-
-    useEffect(() => {
-        Settings.defaultLocale = "es"
-        fetchData()
-    }, [])
-
-    // Expose fetchData to parent through the ref
-    useImperativeHandle(ref, () => ({
-        refetchData: () => {
-            fetchData()
+                headers: { 'Content-Type': 'application/json' }
+            });
+            return response.json();
         },
+    });
+
+    // Keep ref for backwards compatibility
+    useImperativeHandle(ref, () => ({
+        refetchData: () => refetch(),
     }))
 
-    const chartData = monthlyGraphData.labels.map((label: string, index: number) => {
+    const safeData = monthlyGraphData ?? { labels: [], gastosDataset: [], ingresosDataset: [], ahorrosDataset: [] };
+
+    const chartData = safeData.labels.map((label: string, index: number) => {
         const monthName = DateTime.fromFormat(label, "yyyy-MM").toFormat("MMMM").slice(0, 3);
         return {
             month: monthName,
-            gastos: monthlyGraphData.gastosDataset[index],
-            ingresos: monthlyGraphData.ingresosDataset[index],
-            ahorros: monthlyGraphData.ahorrosDataset[index],
+            gastos: safeData.gastosDataset[index],
+            ingresos: safeData.ingresosDataset[index],
+            ahorros: safeData.ahorrosDataset[index],
         };
     });
 
     // Calculate the max value across all datasets for a dynamic Y-axis domain
     const allDataValues = [
-        ...monthlyGraphData.gastosDataset,
-        ...monthlyGraphData.ingresosDataset,
-        ...monthlyGraphData.ahorrosDataset,
+        ...safeData.gastosDataset,
+        ...safeData.ingresosDataset,
+        ...safeData.ahorrosDataset,
     ];
     const dataMax = Math.max(...allDataValues);
     const yAxisDomainMax = Math.round(dataMax * 1.1); // Add a 10% buffer

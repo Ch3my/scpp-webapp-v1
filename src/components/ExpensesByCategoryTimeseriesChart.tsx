@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { CartesianGrid, LabelList, Line, LineChart, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
 import { useAppState } from "@/AppState"
@@ -10,7 +10,12 @@ import {
 } from "@/components/ui/chart"
 import { Skeleton } from "./ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { ButtonGroup } from "./ui/button-group";
 import numeral from "numeral";
+import { useQuery } from "@tanstack/react-query";
+
+Settings.defaultLocale = "es";
 
 interface CategoryDataset {
     label: string;
@@ -42,56 +47,34 @@ interface ExpensesByCategoryTimeseriesChartProps {
 function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesChartProps, ref: React.Ref<unknown>) {
     const { filterTopN } = props;
     const { apiPrefix, sessionId } = useAppState()
-
-    const [expensesData, setExpensesData] = useState<ExpensesByCategoryResponse>({
-        labels: [],
-        datasets: [],
-        range: {
-            start: "",
-            end: ""
-        }
-    })
-
-    const [isLoading, setIsLoading] = useState(true)
     const [activeChart, setActiveChart] = useState<string>("")
+    const [nMonths, setNMonths] = useState<number>(9)
 
-    const fetchData = useCallback(async () => {
-        try {
-            let params = new URLSearchParams();
+    const { data: expensesData, isLoading, refetch } = useQuery<ExpensesByCategoryResponse>({
+        queryKey: ['dashboard', 'expenses-by-category-timeseries', nMonths],
+        queryFn: async () => {
+            const params = new URLSearchParams();
             params.set("sessionHash", sessionId);
-            params.set("nMonths", "13");
+            params.set("nMonths", nMonths.toString());
             const response = await fetch(`${apiPrefix}/expenses-by-category-timeseries?${params.toString()}`, {
                 method: "GET",
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json())
-
-            setExpensesData(response)
-        } catch (err: any) {
-            console.error("Error fetching data:", err)
-        } finally {
-            if (isLoading) {
-                setIsLoading(false)
-            }
-        }
-    }, [apiPrefix, sessionId])
-
-    useEffect(() => {
-        Settings.defaultLocale = "es"
-        fetchData()
-    }, [])
-
-    useImperativeHandle(ref, () => ({
-        refetchData: () => {
-            fetchData()
+                headers: { 'Content-Type': 'application/json' }
+            });
+            return response.json();
         },
+    });
+
+    const safeExpensesData = expensesData ?? { labels: [], datasets: [], range: { start: "", end: "" } };
+
+    // Keep ref for backwards compatibility
+    useImperativeHandle(ref, () => ({
+        refetchData: () => refetch(),
     }))
 
     // Filter and sort datasets by total amount
     const filteredDatasets = useMemo(() => {
         // Calculate total for each category
-        const datasetsWithTotal = expensesData.datasets.map(dataset => ({
+        const datasetsWithTotal = safeExpensesData.datasets.map(dataset => ({
             ...dataset,
             total: dataset.data.reduce((sum, value) => sum + value, 0)
         }));
@@ -105,7 +88,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
         }
 
         return sortedDatasets;
-    }, [expensesData.datasets, filterTopN]);
+    }, [safeExpensesData.datasets, filterTopN]);
 
     // Set active chart to first category when data loads
     useEffect(() => {
@@ -135,7 +118,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
 
     // Transform data for Recharts
     const chartData = useMemo(() => {
-        return expensesData.labels.map((label: string, index: number) => {
+        return safeExpensesData.labels.map((label: string, index: number) => {
             const monthName = DateTime.fromFormat(label, "yyyy-MM").toFormat("MMMM").slice(0, 3);
             const dataPoint: any = { month: monthName, monthLabel: label };
 
@@ -145,14 +128,14 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
 
             return dataPoint;
         });
-    }, [expensesData.labels, filteredDatasets]);
+    }, [safeExpensesData.labels, filteredDatasets]);
 
     if (isLoading) {
         return (
             <Card className="py-4 sm:py-0">
                 <CardHeader>
                     <CardTitle>Gastos por categoría</CardTitle>
-                    <CardDescription>13 meses</CardDescription>
+                    <CardDescription>{nMonths} meses</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Skeleton className="h-[250px] w-full" />
@@ -165,9 +148,29 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
         <Card className="py-4 sm:py-0">
             <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
                 <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
-                    <CardTitle>Gastos por categoría</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                        Gastos por categoría
+                        <ButtonGroup>
+                            <Button
+                                variant={nMonths === 9 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(9)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                9M
+                            </Button>
+                            <Button
+                                variant={nMonths === 13 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(13)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                13M
+                            </Button>
+                        </ButtonGroup>
+                    </CardTitle>
                     <CardDescription>
-                        13 meses
+                        {nMonths} meses
                     </CardDescription>
                 </div>
                 <div className="flex overflow-x-auto">

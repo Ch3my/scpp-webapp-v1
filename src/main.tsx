@@ -23,7 +23,13 @@ const Htas = lazy(() => import("./screens/Htas"));
 const Assets = lazy(() => import("./screens/Assets"));
 const FoodScreen = lazy(() => import("./screens/FoodScreen"));
 
-const queryClient = new QueryClient()
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 120, // data stays fresh, no refetch on window focus
+    },
+  },
+})
 
 const RootComponent = () => {
   const { isLoggedIn } = useAppState();

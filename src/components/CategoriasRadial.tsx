@@ -6,11 +6,12 @@ import {
     ChartTooltipContent,
 } from "@/components/ui/chart"
 import { DateTime } from "luxon"
-import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
+import { forwardRef, useImperativeHandle } from "react"
 import { useAppState } from "@/AppState"
 import numeral from "numeral"
 import { Skeleton } from "./ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
+import { useQuery } from "@tanstack/react-query"
 
 const chartConfig = {
     desktop: {
@@ -20,13 +21,12 @@ const chartConfig = {
 } satisfies ChartConfig
 
 function CategoriasRadial(_props: unknown, ref: React.Ref<unknown>) {
-    const [fechaInicio, _] = useState(DateTime.now());
+    const fechaInicio = DateTime.now();
     const { apiPrefix, sessionId } = useAppState();
-    const [chartData, setChartData] = useState([]);
-    const [isLoading, setIsLoading] = useState(true)
 
-    const fetchData = async () => {
-        try {
+    const { data: chartData = [], isLoading, refetch } = useQuery({
+        queryKey: ['dashboard', 'categorias-radial'],
+        queryFn: async () => {
             const params = new URLSearchParams();
             params.set("sessionHash", sessionId);
             params.set("nMonths", "0");
@@ -35,36 +35,21 @@ function CategoriasRadial(_props: unknown, ref: React.Ref<unknown>) {
                 `${apiPrefix}/expenses-by-category?${params.toString()}`,
                 {
                     method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
+                    headers: { "Content-Type": "application/json" },
                 }
             );
             const result = await response.json();
-            const newChartData = result.data.slice(0, 6).map((item: any) => ({
+            return result.data.slice(0, 6).map((item: any) => ({
                 category: item.label,
-                amount: item.data, // e.g. 4283327
-                catId: item.catId, // optional if you need it for any additional logic
+                amount: item.data,
+                catId: item.catId,
             }));
-
-            setChartData(newChartData);
-        } catch (error) {
-            console.error("Error fetching chart data:", error);
-        }
-        if (isLoading) {
-            setIsLoading(false)
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    // Expose fetchData to parent through the ref
-    useImperativeHandle(ref, () => ({
-        refetchData: () => {
-            fetchData()
         },
+    });
+
+    // Keep ref for backwards compatibility
+    useImperativeHandle(ref, () => ({
+        refetchData: () => refetch(),
     }))
 
     if (isLoading) {

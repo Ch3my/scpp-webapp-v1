@@ -1,7 +1,7 @@
 import React, { useRef, useState, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -41,7 +41,6 @@ const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/Expens
 
 const Dashboard: React.FC = () => {
     const { apiPrefix, sessionId, tipoDocs } = useAppState()
-    const queryClient = useQueryClient();
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
@@ -99,13 +98,7 @@ const Dashboard: React.FC = () => {
         setOpenDocDialog(e)
         if (e === false) {
             setSelectedDoc(null)
-            monthlyChartRef.current?.refetchData?.()
-            barChartRef.current?.refetchData?.()
-            percentageRef.current?.refetchData?.()
-            radarChartRef.current?.refetchData?.()
-            yearlySumRef.current?.refetchData?.()
-            categoryTimeseriesRef.current?.refetchData?.()
-            queryClient.invalidateQueries({ queryKey: ['docs'] })
+            // Note: No need to manually refetch - DocRecord mutations invalidate 'docs' and 'dashboard' queries
         }
     }
 

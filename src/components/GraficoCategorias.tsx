@@ -83,7 +83,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
         };
 
         const { data, isLoading, refetch } = useQuery({
-            queryKey: ['expenses-by-category', sessionId, nMonths],
+            queryKey: ['dashboard', 'expenses-by-category', nMonths],
             queryFn: fetchData,
         });
 

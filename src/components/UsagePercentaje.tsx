@@ -3,6 +3,7 @@ import { useAppState } from "@/AppState"
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
 import { Card, CardContent, CardHeader } from './ui/card';
+import { useQuery } from '@tanstack/react-query';
 
 const OKLCH_GREEN_600 = { l: 62.7, c: 0.194, h: 149.214 };
 const OKLCH_RED_600 = { l: 57.7, c: 0.245, h: 27.325 };
@@ -22,48 +23,49 @@ const getPercentageColor = (percent: number) => {
 
 
 function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
-    const [percentage, setPercentage] = useState<number>(0);
-    const [thisMonthIngresos, setThisMonthIngresos] = useState<number>(0);
-    const [thisMonthGastos, setThisMonthGastos] = useState<number>(0);
-    const [thisRemanente, setRemanente] = useState<number>(0);
-    const [topGastos, setTopGastos] = useState<any[]>([]);
-    const [allTopGastos, setAllTopGastos] = useState<any[]>([]);
     const { apiPrefix, sessionId } = useAppState()
-    const [isLoading, setIsLoading] = useState(true)
+    const [topGastos, setTopGastos] = useState<any[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const fetchPercentage = async () => {
-        setIsLoading(true)
-        let params = new URLSearchParams();
-        params.set("sessionHash", sessionId);
-        const response = await fetch(`${apiPrefix}/curr-month-spending?${params.toString()}`, {
-            method: "GET",
-            headers: {
-                'Content-Type': 'application/json'
+    const { data, isLoading, refetch } = useQuery({
+        queryKey: ['dashboard', 'usage-percentage'],
+        queryFn: async () => {
+            const params = new URLSearchParams();
+            params.set("sessionHash", sessionId);
+            const response = await fetch(`${apiPrefix}/curr-month-spending?${params.toString()}`, {
+                method: "GET",
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const result = await response.json();
+
+            const gasto = result.data.find((o: any) => o.fk_tipoDoc == 1);
+            const ingresos = result.data.find((o: any) => o.fk_tipoDoc == 3);
+
+            if (!gasto || !ingresos) {
+                return null;
             }
-        }).then(response => response.json())
 
-        const gasto = response.data.find((o: any) => o.fk_tipoDoc == 1)
-        const ingresos = response.data.find((o: any) => o.fk_tipoDoc == 3)
-        if (!gasto || !ingresos) {
-            setIsLoading(false)
-            return
-        }
-        setThisMonthIngresos(ingresos.sumMonto)
-        setThisMonthGastos(gasto.sumMonto)
-        setRemanente(ingresos.sumMonto - gasto.sumMonto)
+            return {
+                percentage: result.porcentajeUsado,
+                thisMonthIngresos: ingresos.sumMonto,
+                thisMonthGastos: gasto.sumMonto,
+                thisRemanente: ingresos.sumMonto - gasto.sumMonto,
+                allTopGastos: result.topGastos,
+            };
+        },
+    });
 
-        setAllTopGastos(response.topGastos)
-        setPercentage(response.porcentajeUsado)
-        setIsLoading(false)
-    };
+    const percentage = data?.percentage ?? 0;
+    const thisMonthIngresos = data?.thisMonthIngresos ?? 0;
+    const thisMonthGastos = data?.thisMonthGastos ?? 0;
+    const thisRemanente = data?.thisRemanente ?? 0;
+    const allTopGastos = data?.allTopGastos ?? [];
 
     const calculateVisibleItems = () => {
         if (!listRef.current) return;
 
         const listHeight = listRef.current.clientHeight;
-        // Each item is approximately 24px (text-sm line height + gap-1)
         const itemHeight = 24;
         const maxItems = Math.max(1, Math.floor(listHeight / itemHeight));
         const itemsToShow = Math.min(maxItems, allTopGastos.length);
@@ -72,12 +74,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     };
 
     useEffect(() => {
-        fetchPercentage();
-    }, []);
-
-    useEffect(() => {
         if (allTopGastos.length > 0 && listRef.current) {
-            // Use setTimeout to ensure DOM is fully rendered
             const timeoutId = setTimeout(() => {
                 calculateVisibleItems();
             }, 100);
@@ -97,11 +94,9 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
         }
     }, [allTopGastos]);
 
-    // Expose fetchData to parent through the ref
+    // Keep ref for backwards compatibility
     useImperativeHandle(ref, () => ({
-        refetchData: () => {
-            fetchPercentage()
-        },
+        refetchData: () => refetch(),
     }))
 
     if (isLoading) {

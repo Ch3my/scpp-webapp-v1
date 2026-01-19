@@ -1,55 +1,52 @@
-import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
+import React, { forwardRef, useImperativeHandle } from 'react';
 import { useAppState } from "@/AppState"
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
 import { ArrowBigDownDash, ArrowBigUpDash, Minus } from 'lucide-react';
 import { CardHeader, CardDescription, CardTitle, Card, CardContent } from './ui/card';
 import { DateTime } from 'luxon';
+import { useQuery } from '@tanstack/react-query';
 
 function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
-  // const [percentage, setPercentage] = useState<number>(0);
-  const [gastoSum, setGastoSum] = useState<number>(0);
-  const [ingresoSum, setIngresoSum] = useState<number>(0);
-  const [utilidadAnual, setUtilidadAnual] = useState<number>(0);
-  const [montoUtilidad, setMontoUtilidad] = useState<number>(0);
-  const [range, setRange] = useState<{ start: DateTime; end: DateTime }>({ start: DateTime.now(), end: DateTime.now() })
   const { apiPrefix, sessionId } = useAppState()
-  const [isLoading, setIsLoading] = useState(true)
 
-  const fetchPercentage = async () => {
-    setIsLoading(true)
-    let params = new URLSearchParams();
-    params.set("sessionHash", sessionId);
-    params.set("nMonths", "12");
-    const response = await fetch(`${apiPrefix}/yearly-sum?${params.toString()}`, {
-      method: "GET",
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    }).then(response => response.json())
-    let gasto = response.data.find((o: any) => o.id == 1)
-    let ingreso = response.data.find((o: any) => o.id == 3)
-    // setPercentage(response.porcentajeUsado)
-    setGastoSum(gasto.sumMonto)
-    setIngresoSum(ingreso.sumMonto)
-    setUtilidadAnual(100 - response.porcentajeUsado)
-    setMontoUtilidad(ingreso.sumMonto - gasto.sumMonto)
-    setRange({
-      start: DateTime.fromFormat(response.range.start, "yyyy-MM-dd"),
-      end: DateTime.fromFormat(response.range.end, "yyyy-MM-dd"),
-    });
-    setIsLoading(false)
-  };
+  const { data, isLoading, refetch } = useQuery({
+    queryKey: ['dashboard', 'yearly-sum'],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      params.set("sessionHash", sessionId);
+      params.set("nMonths", "12");
+      const response = await fetch(`${apiPrefix}/yearly-sum?${params.toString()}`, {
+        method: "GET",
+        headers: { 'Content-Type': 'application/json' }
+      });
+      const result = await response.json();
 
-  useEffect(() => {
-    fetchPercentage();
-  }, []);
+      const gasto = result.data.find((o: any) => o.id == 1);
+      const ingreso = result.data.find((o: any) => o.id == 3);
 
-  // Expose fetchData to parent through the ref
-  useImperativeHandle(ref, () => ({
-    refetchData: () => {
-      fetchPercentage()
+      return {
+        gastoSum: gasto.sumMonto,
+        ingresoSum: ingreso.sumMonto,
+        utilidadAnual: 100 - result.porcentajeUsado,
+        montoUtilidad: ingreso.sumMonto - gasto.sumMonto,
+        range: {
+          start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
+          end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
+        },
+      };
     },
+  });
+
+  const gastoSum = data?.gastoSum ?? 0;
+  const ingresoSum = data?.ingresoSum ?? 0;
+  const utilidadAnual = data?.utilidadAnual ?? 0;
+  const montoUtilidad = data?.montoUtilidad ?? 0;
+  const range = data?.range ?? { start: DateTime.now(), end: DateTime.now() };
+
+  // Keep ref for backwards compatibility
+  useImperativeHandle(ref, () => ({
+    refetchData: () => refetch(),
   }))
 
   const getIcon = () => {
