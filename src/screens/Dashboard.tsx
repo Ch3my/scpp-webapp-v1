@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { Label } from '@/components/ui/label';
 import DocRecord from '@/components/DocRecord';
+import { Documento } from '@/models/Documento';
 import { CirclePlus, ListRestart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DocsFilters } from '@/components/DocsFilters';
@@ -45,7 +46,7 @@ const Dashboard: React.FC = () => {
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
     const [selectedTipoDoc, setSelectedTipoDoc] = useState<number>(1);
-    const [selectedDocId, setSelectedDocId] = useState<number>(0);
+    const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const [searchPhraseIgnoreOtherFilters, setSearchPhraseIgnoreOtherFilters] = useState<boolean>(true)
     const [openDocDialog, setOpenDocDialog] = useState<boolean>(false);
@@ -97,7 +98,7 @@ const Dashboard: React.FC = () => {
     const docDialogOpenChange = (e: boolean) => {
         setOpenDocDialog(e)
         if (e === false) {
-            setSelectedDocId(0)
+            setSelectedDoc(null)
             monthlyChartRef.current?.refetchData?.()
             barChartRef.current?.refetchData?.()
             percentageRef.current?.refetchData?.()
@@ -108,13 +109,13 @@ const Dashboard: React.FC = () => {
         }
     }
 
-    const handleRowClick = (id: number) => {
-        setSelectedDocId(id)
+    const handleRowClick = (doc: Documento) => {
+        setSelectedDoc(doc)
         setOpenDocDialog(true)
     }
 
     const handleNewDocBtn = () => {
-        setSelectedDocId(0)
+        setSelectedDoc(null)
         setOpenDocDialog(!openDocDialog)
     }
 
@@ -180,7 +181,7 @@ const Dashboard: React.FC = () => {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <DocRecord id={selectedDocId} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
+                    <DocRecord initialData={selectedDoc} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
                 </div>
                 <Label>Total: ${numeral(totalDocs).format("0,0")}</Label>
 
@@ -199,7 +200,7 @@ const Dashboard: React.FC = () => {
                                     <TableCell colSpan={3}>Sin Datos</TableCell>
                                 </TableRow>)}
                             {docs.map((doc: any, index: number) => (
-                                <TableRow key={index} onClick={() => !isFetching && handleRowClick(doc.id)} style={{ cursor: isFetching ? 'not-allowed' : 'pointer' }}>
+                                <TableRow key={index} onClick={() => !isFetching && handleRowClick(doc)} style={{ cursor: isFetching ? 'not-allowed' : 'pointer' }}>
                                     <TableCell>{doc.fecha}</TableCell>
                                     <TableCell>{doc.proposito}</TableCell>
                                     <TableCell className="text-right">{numeral(doc.monto).format("0,0")}</TableCell>
