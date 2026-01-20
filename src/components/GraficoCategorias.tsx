@@ -41,6 +41,37 @@ interface ChartDataItem {
 
 const MIN_CATEGORIES = 3;
 
+function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (n: number) => void }) {
+    return (
+        <ButtonGroup>
+            <Button
+                variant={nMonths === 13 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setNMonths(13)}
+                className="h-6 px-2 text-xs"
+            >
+                13M
+            </Button>
+            <Button
+                variant={nMonths === 6 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setNMonths(6)}
+                className="h-6 px-2 text-xs"
+            >
+                6M
+            </Button>
+            <Button
+                variant={nMonths === 3 ? "default" : "outline"}
+                size="sm"
+                onClick={() => setNMonths(3)}
+                className="h-6 px-2 text-xs"
+            >
+                3M
+            </Button>
+        </ButtonGroup>
+    );
+}
+
 const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasProps>(
     function GraficoCategorias(props, ref) {
         const { onBarClick } = props;
@@ -121,32 +152,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                     <CardHeader>
                         <div className="flex items-center justify-between">
                             <CardTitle>Gastos por Categorias</CardTitle>
-                            <ButtonGroup>
-                                <Button
-                                    variant={nMonths === 13 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setNMonths(13)}
-                                    className="h-6 px-2 text-xs"
-                                >
-                                    13M
-                                </Button>
-                                <Button
-                                    variant={nMonths === 6 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setNMonths(6)}
-                                    className="h-6 px-2 text-xs"
-                                >
-                                    6M
-                                </Button>
-                                <Button
-                                    variant={nMonths === 3 ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => setNMonths(3)}
-                                    className="h-6 px-2 text-xs"
-                                >
-                                    3M
-                                </Button>
-                            </ButtonGroup>
+                            <MonthSelector nMonths={nMonths} setNMonths={setNMonths} />
                         </div>
                         <CardDescription>{nMonths} meses</CardDescription>
                     </CardHeader>
@@ -168,32 +174,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle>Gastos por Categorias</CardTitle>
-                        <ButtonGroup>
-                            <Button
-                                variant={nMonths === 12 ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setNMonths(12)}
-                                className="h-6 px-2 text-xs"
-                            >
-                                13M
-                            </Button>
-                            <Button
-                                variant={nMonths === 6 ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setNMonths(6)}
-                                className="h-6 px-2 text-xs"
-                            >
-                                6M
-                            </Button>
-                            <Button
-                                variant={nMonths === 3 ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setNMonths(3)}
-                                className="h-6 px-2 text-xs"
-                            >
-                                3M
-                            </Button>
-                        </ButtonGroup>
+                        <MonthSelector nMonths={nMonths} setNMonths={setNMonths} />
                     </div>
                     <CardDescription>{range.start.toLocaleString({ month: 'long', year: 'numeric' })} - {range.end.toLocaleString({ month: 'long', year: 'numeric' })}</CardDescription>
                 </CardHeader>
