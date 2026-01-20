@@ -189,7 +189,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                             {row.original.transactionType === "restock" && (
                                 <DropdownMenuItem
                                     onClick={() => {
-                                        onTransactionEdit?.(row.original.id)
+                                        onTransactionEdit?.(row.original)
                                         setDropdownOpen(false);
                                     }}
                                 >

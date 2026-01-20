@@ -20,15 +20,17 @@ import { DatePickerInput } from "./DatePickerInput";
 import { ComboboxAlimentos } from "./ComboboxAlimentos";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { FoodTransaction } from "@/models/FoodTransaction";
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
     isOpen?: boolean;
-    id?: number;
     hideButton?: boolean;
+    /** Pass initial data to avoid fetching - for edit mode with data from parent */
+    initialData?: FoodTransaction | null;
 }
 
-const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: controlledIsOpen, hideButton }) => {
+const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, hideButton, initialData }) => {
     const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
     const [codigo, setCodigo] = useState<string>("");
@@ -40,14 +42,16 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: cont
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
-    const { data: transaction, isLoading: isTransactionLoading } = useQuery<any>({
-        queryKey: ['transaction', id],
+    const isEditMode = !!initialData;
+
+    // Fetch fresh data in background to ensure we have latest version
+    const { data: freshData } = useQuery<FoodTransaction>({
+        queryKey: ['transaction', initialData?.id],
         queryFn: async () => {
-            if (!id) return null;
-            let params = new URLSearchParams();
+            const params = new URLSearchParams();
             params.set("sessionHash", sessionId);
-            params.set("id", id.toString());
-            let response = await fetch(`${apiPrefix}/food/transaction?${params.toString()}`, {
+            params.set("id", initialData!.id.toString());
+            const response = await fetch(`${apiPrefix}/food/transaction?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -57,34 +61,49 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: cont
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const data = await response.json();
-            return data[0];
+            const item = data[0];
+            return {
+                id: item.id,
+                itemId: item.item_id,
+                changeQty: item.change_qty,
+                transactionType: item.transaction_type,
+                occurredAt: DateTime.fromISO(item.occurred_at),
+                note: item.note,
+                code: item.code,
+                bestBefore: item.best_before ? DateTime.fromISO(item.best_before) : null,
+                food: undefined,
+                remainingQuantity: item.remaining_quantity,
+                fkTransaction: item.fk_transaction
+            };
         },
-        enabled: !!id && isOpen,
+        enabled: isOpen && !!initialData,
+        staleTime: 0,
     });
+
+    // Use fresh data if available, otherwise use initialData
+    const transactionData = freshData ?? initialData;
 
     useEffect(() => {
         if (isOpen) {
-            if (id && transaction) {
-                setItemId(transaction.item_id);
-                setCantidad(transaction.change_qty);
-                setAccion(transaction.transaction_type);
-                setCodigo(transaction.code);
-                setNotas(transaction.note);
-                if (transaction.best_before) {
-                    setBestBefore(DateTime.fromISO(transaction.best_before));
+            if (transactionData) {
+                setItemId(transactionData.itemId);
+                setCantidad(transactionData.changeQty);
+                setAccion(transactionData.transactionType);
+                setCodigo(transactionData.code);
+                setNotas(transactionData.note);
+                if (transactionData.bestBefore) {
+                    setBestBefore(transactionData.bestBefore);
                 }
             } else {
                 clearInputs();
             }
         }
-    }, [isOpen, id, transaction]);
+    }, [isOpen, transactionData]);
 
     const mutation = useMutation({
         mutationFn: async (payload: any) => {
-            let url = id ? `${apiPrefix}/food/transaction` : `${apiPrefix}/food/transaction`;
-            let method = id ? 'PUT' : 'POST';
-    
-            let reponse = await fetch(url, {
+            const method = isEditMode ? 'PUT' : 'POST';
+            let reponse = await fetch(`${apiPrefix}/food/transaction`, {
                 method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -120,15 +139,17 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: cont
             return
         }
         let calculatedBestBefore = bestBefore ? bestBefore.toFormat("yyyy-MM-dd") : null;
-        const payload = {
+        const payload: any = {
             sessionHash: sessionId,
-            id: id,
             foodItemId: Number(itemId),
             quantity: cantidad,
             transactionType: accion,
             code: codigo,
             note: notas,
             bestBefore: calculatedBestBefore
+        }
+        if (isEditMode) {
+            payload.id = initialData!.id;
         }
         mutation.mutate(payload);
     }
@@ -159,7 +180,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: cont
             </DialogTrigger>}
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
-                    <DialogTitle>{id ? "Editar" : "Nueva"} transacción</DialogTitle>
+                    <DialogTitle>{isEditMode ? "Editar" : "Nueva"} transacción</DialogTitle>
                     <DialogDescription>
                         Ingresa, egresa o ajusta la cantidad de un alimento
                     </DialogDescription>
@@ -209,8 +230,8 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, id, isOpen: cont
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotas(e.target.value)} />
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSave} disabled={mutation.isPending || isTransactionLoading}>
-                        {(mutation.isPending || isTransactionLoading) && <Loader2 className="animate-spin" />}
+                    <Button onClick={handleSave} disabled={mutation.isPending}>
+                        {mutation.isPending && <Loader2 className="animate-spin" />}
                         Guardar
                     </Button>
                 </DialogFooter>

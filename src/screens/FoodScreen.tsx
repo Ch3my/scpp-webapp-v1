@@ -15,6 +15,7 @@ import FoodTransactionRecord from '@/components/FoodTransactionRecord';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useQueryClient } from '@tanstack/react-query';
+import { FoodTransaction } from '@/models/FoodTransaction';
 
 const FoodScreen: React.FC = () => {
     const { apiPrefix, sessionId } = useAppState()
@@ -23,7 +24,7 @@ const FoodScreen: React.FC = () => {
     const [openFoodTransactionDialog, setOpenFoodTransactionDialog] = React.useState<boolean>(false);
     const foodTransactionRef = useRef<FoodTransactionsRef>(null);
     const [selectedFoodItemId, setSelectedFoodItemId] = React.useState<number>(0);
-    const [selectedFoodTransactionId, setSelectedFoodTransactionId] = React.useState<number>(0);
+    const [selectedFoodTransaction, setSelectedFoodTransaction] = React.useState<FoodTransaction | null>(null);
     const [foodItemIdFilter, setFoodItemIdFilter] = React.useState<number>(0);
     const [codeFilter, setCodeFilter] = React.useState<string>("");
     const [comboboxOpen, setComboboxOpen] = React.useState<boolean>(false);
@@ -33,7 +34,7 @@ const FoodScreen: React.FC = () => {
         if (!isOpen) {
             queryClient.invalidateQueries({ queryKey: ['foods'] });
             foodTransactionRef.current?.refetch()
-            setSelectedFoodTransactionId(0)
+            setSelectedFoodTransaction(null)
         }
     }
     const newFoodItemDialogEvent = (isOpen: boolean) => {
@@ -46,8 +47,8 @@ const FoodScreen: React.FC = () => {
         }
     }
 
-    const editFoodTransaction = async (id: number) => {
-        setSelectedFoodTransactionId(id)
+    const editFoodTransaction = (transaction: FoodTransaction) => {
+        setSelectedFoodTransaction(transaction)
         setOpenFoodTransactionDialog(true)
     }
 
@@ -91,14 +92,14 @@ const FoodScreen: React.FC = () => {
                 </div>
                 <div className='overflow-y-auto'>
                     <FoodTransactions ref={foodTransactionRef}
-                        onTransactionEdit={(id) => { editFoodTransaction(id) }}
+                        onTransactionEdit={editFoodTransaction}
                         foodItemIdFilter={foodItemIdFilter}
                         codeFilter={codeFilter}
                     />
                 </div>
             </div>
             <FoodItemRecord onOpenChange={newFoodItemDialogEvent} id={selectedFoodItemId} isOpen={openFoodItemDialog} hideButton={true} />
-            <FoodTransactionRecord onOpenChange={foodTransactionDialogEvent} id={selectedFoodTransactionId} isOpen={openFoodTransactionDialog} hideButton={true} />
+            <FoodTransactionRecord onOpenChange={foodTransactionDialogEvent} initialData={selectedFoodTransaction} isOpen={openFoodTransactionDialog} hideButton={true} />
         </div>
     );
 };

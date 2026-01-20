@@ -29,7 +29,7 @@ export interface FoodTransactionsRef {
     refetch: () => void;
 }
 export interface FoodTransactionsProps {
-    onTransactionEdit?: (id: number) => void;
+    onTransactionEdit?: (transaction: FoodTransaction) => void;
     foodItemIdFilter: number;
     codeFilter: string;
 }
