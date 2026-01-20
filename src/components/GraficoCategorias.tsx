@@ -123,12 +123,12 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                             <CardTitle>Gastos por Categorias</CardTitle>
                             <ButtonGroup>
                                 <Button
-                                    variant={nMonths === 3 ? "default" : "outline"}
+                                    variant={nMonths === 13 ? "default" : "outline"}
                                     size="sm"
-                                    onClick={() => setNMonths(3)}
+                                    onClick={() => setNMonths(13)}
                                     className="h-6 px-2 text-xs"
                                 >
-                                    3M
+                                    13M
                                 </Button>
                                 <Button
                                     variant={nMonths === 6 ? "default" : "outline"}
@@ -139,12 +139,12 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                                     6M
                                 </Button>
                                 <Button
-                                    variant={nMonths === 13 ? "default" : "outline"}
+                                    variant={nMonths === 3 ? "default" : "outline"}
                                     size="sm"
-                                    onClick={() => setNMonths(13)}
+                                    onClick={() => setNMonths(3)}
                                     className="h-6 px-2 text-xs"
                                 >
-                                    13M
+                                    3M
                                 </Button>
                             </ButtonGroup>
                         </div>

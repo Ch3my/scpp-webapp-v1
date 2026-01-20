@@ -152,7 +152,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                         Gastos por categoría
                     </CardTitle>
                     <CardDescription>
-                        <ButtonGroup>
+                        <ButtonGroup className="mt-2">
                             <Button
                                 variant={nMonths === 13 ? "default" : "outline"}
                                 size="sm"
