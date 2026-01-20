@@ -150,15 +150,9 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                 <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
                     <CardTitle className="flex items-center gap-2">
                         Gastos por categoría
+                    </CardTitle>
+                    <CardDescription>
                         <ButtonGroup>
-                            <Button
-                                variant={nMonths === 9 ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => setNMonths(9)}
-                                className="h-6 px-2 text-xs"
-                            >
-                                9M
-                            </Button>
                             <Button
                                 variant={nMonths === 13 ? "default" : "outline"}
                                 size="sm"
@@ -167,10 +161,15 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                             >
                                 13M
                             </Button>
+                            <Button
+                                variant={nMonths === 9 ? "default" : "outline"}
+                                size="sm"
+                                onClick={() => setNMonths(9)}
+                                className="h-6 px-2 text-xs"
+                            >
+                                9M
+                            </Button>
                         </ButtonGroup>
-                    </CardTitle>
-                    <CardDescription>
-                        {nMonths} meses
                     </CardDescription>
                 </div>
                 <div className="flex overflow-x-auto">
