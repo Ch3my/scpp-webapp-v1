@@ -14,6 +14,7 @@ import {
 } from '@tanstack/react-query'
 import "./App.css";
 import "./Custom.css";
+import { RequireAuth } from "./components/RequireAuth";
 
 // Dashboard is eager - 90% of users auto-navigate to it from App.tsx
 // Lazy load other screens
@@ -55,11 +56,13 @@ const RootComponent = () => {
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/config" element={<Config />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/htas" element={<Htas />} />
-          <Route path="/assets" element={<Assets />} />
-          <Route path="/food" element={<FoodScreen />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/config" element={<Config />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/htas" element={<Htas />} />
+            <Route path="/assets" element={<Assets />} />
+            <Route path="/food" element={<FoodScreen />} />
+          </Route>
         </Routes>
       </Suspense>
     </>

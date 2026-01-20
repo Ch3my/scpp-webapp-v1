@@ -30,38 +30,47 @@ import {
 import { toast } from 'sonner';
 import { NewAsset } from '@/components/NewAsset';
 import LoadingCircle from '@/components/LoadingCircle';
-
-export type Asset = {
-    id: number
-    fecha: string
-    descripcion: string
-    categoria: {
-        descripcion: string
-    }
-}
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Asset } from '@/models/Asset';
 
 const Assets: React.FC = () => {
     const { apiPrefix, sessionId } = useAppState()
-    const [assets, setAssets] = React.useState<Asset[]>([]);
+    const queryClient = useQueryClient();
     const [base64Img, setBase64Img] = React.useState<string>("");
-    const [loading, setLoading] = React.useState<boolean>(false);
     const [loadingAsset, setLoadingAsset] = React.useState<boolean>(false);
     const [assetIdToBeDeleted, setAssetIdToBeDeleted] = React.useState<number>(0);
     const [showDeleteConfirm, setShowDeleteConfirm] = React.useState<boolean>(false);
 
-    const getData = async () => {
-        setLoading(true);
-        let params = new URLSearchParams();
-        params.set("sessionHash", sessionId);
-        let data = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => response.json())
-        setAssets(data);
-        setLoading(false);
-    }
+    const { data: assets = [], isLoading } = useQuery<Asset[]>({
+        queryKey: ['assets'],
+        queryFn: async () => {
+            let params = new URLSearchParams();
+            params.set("sessionHash", sessionId);
+            let response = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            return response.json();
+        }
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: async (id: number) => {
+            await fetch(`${apiPrefix}/assets`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sessionHash: sessionId, id }),
+            });
+        },
+        onSuccess: () => {
+            toast('Documento Eliminado');
+            queryClient.invalidateQueries({ queryKey: ['assets'] });
+        }
+    });
 
     const handleRowClick = async (id: number, e: any) => {
         // Los elementos de las htas igual trigger este evento, por lo que se debe filtrar
@@ -83,28 +92,15 @@ const Assets: React.FC = () => {
         setLoadingAsset(false)
     }
 
-    const deleteAsset = async (confirmed?: boolean) => {
+    const deleteAsset = (confirmed?: boolean) => {
         if (!confirmed) {
             setShowDeleteConfirm(true)
             return
         }
         setShowDeleteConfirm(false)
         setBase64Img("");
-        await fetch(`${apiPrefix}/assets`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ sessionHash: sessionId, id: assetIdToBeDeleted }),
-
-        }).then(response => response.json())
-        toast('Documento Eliminado')
-        getData()
+        deleteMutation.mutate(assetIdToBeDeleted);
     }
-
-    React.useEffect(() => {
-        getData()
-    }, []);
 
     return (
         <div className="grid gap-4 p-2 w-screen h-screen" style={{ gridTemplateColumns: "2fr 3fr" }} >
@@ -112,7 +108,7 @@ const Assets: React.FC = () => {
                 <ScreenTitle title='Assets' />
                 <div>
                     <div className='px-1'>
-                        <NewAsset onAssetSaved={() => getData()} />
+                        <NewAsset onAssetSaved={() => queryClient.invalidateQueries({ queryKey: ['assets'] })} />
                     </div>
                     <Table size='compact'>
                         <TableHeader>
@@ -124,7 +120,7 @@ const Assets: React.FC = () => {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {loading ? (
+                            {isLoading ? (
                                 <TableRow>
                                     <TableCell colSpan={4} className="text-center">Cargando...</TableCell>
                                 </TableRow>
