@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useState, useTransition, useDeferredValue } from 'react';
 import { CirclePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -8,42 +8,41 @@ import { ComboboxAlimentos } from '@/components/ComboboxAlimentos';
 import { useAppState } from '@/AppState';
 import ScreenTitle from '@/components/ScreenTitle';
 
-import FoodTransactions, { FoodTransactionsRef } from '@/components/FoodTransactions';
+import FoodTransactions from '@/components/FoodTransactions';
 import FoodItemRecord from '@/components/FoodItemRecord';
 import FoodTransactionRecord from '@/components/FoodTransactionRecord';
 
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
-import { useQueryClient } from '@tanstack/react-query';
 import { FoodTransaction } from '@/models/FoodTransaction';
 
-const FoodScreen: React.FC = () => {
+const FoodScreen = () => {
     const { apiPrefix, sessionId } = useAppState()
-    const queryClient = useQueryClient();
-    const [openFoodItemDialog, setOpenFoodItemDialog] = React.useState<boolean>(false);
-    const [openFoodTransactionDialog, setOpenFoodTransactionDialog] = React.useState<boolean>(false);
-    const foodTransactionRef = useRef<FoodTransactionsRef>(null);
-    const [selectedFoodItemId, setSelectedFoodItemId] = React.useState<number>(0);
-    const [selectedFoodTransaction, setSelectedFoodTransaction] = React.useState<FoodTransaction | null>(null);
-    const [foodItemIdFilter, setFoodItemIdFilter] = React.useState<number>(0);
-    const [codeFilter, setCodeFilter] = React.useState<string>("");
-    const [comboboxOpen, setComboboxOpen] = React.useState<boolean>(false);
+    const [openFoodItemDialog, setOpenFoodItemDialog] = useState(false);
+    const [openFoodTransactionDialog, setOpenFoodTransactionDialog] = useState(false);
+    const [selectedFoodItemId, setSelectedFoodItemId] = useState(0);
+    const [selectedFoodTransaction, setSelectedFoodTransaction] = useState<FoodTransaction | null>(null);
+    const [foodItemIdFilter, setFoodItemIdFilter] = useState(0);
+    const [codeFilter, setCodeFilter] = useState("");
+    const [comboboxOpen, setComboboxOpen] = useState(false);
+
+    // useTransition for filter changes - keeps Food Storage side responsive
+    const [, startFilterTransition] = useTransition();
+
+    // useDeferredValue for code filter - keeps typing fluid
+    const deferredCodeFilter = useDeferredValue(codeFilter);
 
     const foodTransactionDialogEvent = (isOpen: boolean) => {
         setOpenFoodTransactionDialog(isOpen)
         if (!isOpen) {
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            foodTransactionRef.current?.refetch()
             setSelectedFoodTransaction(null)
         }
     }
+
     const newFoodItemDialogEvent = (isOpen: boolean) => {
         setOpenFoodItemDialog(isOpen)
         if (!isOpen) {
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            setTimeout(() => {
-                setSelectedFoodItemId(0) // Reset the selected food item ID
-            }, 100); // Delay to allow the dialog to close before reset that change text inside the dialog
+            setSelectedFoodItemId(0)
         }
     }
 
@@ -78,7 +77,7 @@ const FoodScreen: React.FC = () => {
                         }}><CirclePlus /></Button>
                         <ComboboxAlimentos
                             value={foodItemIdFilter}
-                            onChange={setFoodItemIdFilter}
+                            onChange={(value) => startFilterTransition(() => setFoodItemIdFilter(value))}
                             open={comboboxOpen}
                             onOpenChange={setComboboxOpen}
                         />
@@ -91,14 +90,14 @@ const FoodScreen: React.FC = () => {
                     </div>
                 </div>
                 <div className='overflow-y-auto'>
-                    <FoodTransactions ref={foodTransactionRef}
+                    <FoodTransactions
                         onTransactionEdit={editFoodTransaction}
                         foodItemIdFilter={foodItemIdFilter}
-                        codeFilter={codeFilter}
+                        codeFilter={deferredCodeFilter}
                     />
                 </div>
             </div>
-            <FoodItemRecord onOpenChange={newFoodItemDialogEvent} id={selectedFoodItemId} isOpen={openFoodItemDialog} hideButton={true} />
+            <FoodItemRecord key={selectedFoodItemId} onOpenChange={newFoodItemDialogEvent} id={selectedFoodItemId} isOpen={openFoodItemDialog} hideButton={true} />
             <FoodTransactionRecord onOpenChange={foodTransactionDialogEvent} initialData={selectedFoodTransaction} isOpen={openFoodTransactionDialog} hideButton={true} />
         </div>
     );

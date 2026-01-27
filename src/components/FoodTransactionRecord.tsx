@@ -116,6 +116,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
+            queryClient.invalidateQueries({ queryKey: ['foods'] });
             toast("Transacción guardada")
             handleDialogChange(false);
             clearInputs()

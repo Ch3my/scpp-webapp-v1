@@ -1,4 +1,4 @@
-import React from 'react';
+import { useTransition, useOptimistic, useState, type MouseEvent } from 'react';
 import { useAppState } from "@/AppState"
 import ScreenTitle from '@/components/ScreenTitle';
 
@@ -33,20 +33,21 @@ import LoadingCircle from '@/components/LoadingCircle';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Asset } from '@/models/Asset';
 
-const Assets: React.FC = () => {
+const Assets = () => {
     const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
-    const [base64Img, setBase64Img] = React.useState<string>("");
-    const [loadingAsset, setLoadingAsset] = React.useState<boolean>(false);
-    const [assetIdToBeDeleted, setAssetIdToBeDeleted] = React.useState<number>(0);
-    const [showDeleteConfirm, setShowDeleteConfirm] = React.useState<boolean>(false);
+    const [base64Img, setBase64Img] = useState("");
+    const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+
+    // useTransition for image fetching
+    const [isLoadingAsset, startAssetTransition] = useTransition();
 
     const { data: assets = [], isLoading } = useQuery<Asset[]>({
         queryKey: ['assets'],
         queryFn: async () => {
-            let params = new URLSearchParams();
+            const params = new URLSearchParams();
             params.set("sessionHash", sessionId);
-            let response = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
+            const response = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json'
@@ -55,6 +56,12 @@ const Assets: React.FC = () => {
             return response.json();
         }
     });
+
+    // useOptimistic for immediate UI feedback on delete
+    const [optimisticAssets, removeOptimisticAsset] = useOptimistic(
+        assets,
+        (currentAssets, deletedId: number) => currentAssets.filter(a => a.id !== deletedId)
+    );
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
@@ -69,38 +76,40 @@ const Assets: React.FC = () => {
         onSuccess: () => {
             toast('Documento Eliminado');
             queryClient.invalidateQueries({ queryKey: ['assets'] });
+        },
+        onError: () => {
+            toast.error('Error al eliminar');
+            queryClient.invalidateQueries({ queryKey: ['assets'] });
         }
     });
 
-    const handleRowClick = async (id: number, e: any) => {
-        // Los elementos de las htas igual trigger este evento, por lo que se debe filtrar
-        if (e.target.textContent === "Eliminar") {
+    const handleRowClick = (id: number, e: MouseEvent) => {
+        if ((e.target as HTMLElement).textContent === "Eliminar") {
             return;
         }
-        setLoadingAsset(true)
 
-        let params = new URLSearchParams();
-        params.set("sessionHash", sessionId);
-        params.set("id[]", String(id));
-        let data = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        }).then(response => response.json())
-        setBase64Img(data[0].assetData);
-        setLoadingAsset(false)
-    }
+        startAssetTransition(async () => {
+            const params = new URLSearchParams();
+            params.set("sessionHash", sessionId);
+            params.set("id[]", String(id));
+            const data = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => response.json());
+            setBase64Img(data[0].assetData);
+        });
+    };
 
-    const deleteAsset = (confirmed?: boolean) => {
-        if (!confirmed) {
-            setShowDeleteConfirm(true)
-            return
-        }
-        setShowDeleteConfirm(false)
+    const confirmDelete = () => {
+        if (!assetToDelete) return;
+
         setBase64Img("");
-        deleteMutation.mutate(assetIdToBeDeleted);
-    }
+        removeOptimisticAsset(assetToDelete.id);
+        deleteMutation.mutate(assetToDelete.id);
+        setAssetToDelete(null);
+    };
 
     return (
         <div className="grid gap-4 p-2 w-screen h-screen" style={{ gridTemplateColumns: "2fr 3fr" }} >
@@ -125,8 +134,8 @@ const Assets: React.FC = () => {
                                     <TableCell colSpan={4} className="text-center">Cargando...</TableCell>
                                 </TableRow>
                             ) : (
-                                assets.map((asset, index) => (
-                                    <TableRow key={index} onClick={(e) => handleRowClick(asset.id, e)}>
+                                optimisticAssets.map((asset) => (
+                                    <TableRow key={asset.id} onClick={(e) => handleRowClick(asset.id, e)}>
                                         <TableCell>{asset.fecha}</TableCell>
                                         <TableCell>{asset.descripcion}</TableCell>
                                         <TableCell>{asset.categoria.descripcion}</TableCell>
@@ -139,12 +148,7 @@ const Assets: React.FC = () => {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem
-                                                        onClick={() => {
-                                                            setAssetIdToBeDeleted(asset.id)
-                                                            deleteAsset()
-                                                        }}
-                                                    >
+                                                    <DropdownMenuItem onClick={() => setAssetToDelete(asset)}>
                                                         Eliminar
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -157,11 +161,16 @@ const Assets: React.FC = () => {
                     </Table>
                 </div>
             </div>
-            {loadingAsset ?
-                <LoadingCircle /> :
+            {isLoadingAsset ? (
+                <LoadingCircle />
+            ) : base64Img ? (
                 <AssetImgViewer base64Img={base64Img} />
-            }
-            <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+            ) : (
+                <div className="flex items-center justify-center h-full border-2 border-dashed border-muted-foreground/25 rounded-lg m-2">
+                    <p className="text-muted-foreground text-sm">Selecciona un asset para ver</p>
+                </div>
+            )}
+            <Dialog open={assetToDelete !== null} onOpenChange={(open) => !open && setAssetToDelete(null)}>
                 <DialogContent className="sm:max-w-[425px]">
                     <DialogHeader>
                         <DialogTitle>Eliminar Asset?</DialogTitle>
@@ -170,7 +179,7 @@ const Assets: React.FC = () => {
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
-                        <Button onClick={() => deleteAsset(true)} variant="destructive">Eliminar</Button>
+                        <Button onClick={confirmDelete} variant="destructive">Eliminar</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

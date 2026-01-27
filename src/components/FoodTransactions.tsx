@@ -28,11 +28,13 @@ import { Skeleton } from './ui/skeleton';
 export interface FoodTransactionsRef {
     refetch: () => void;
 }
-export interface FoodTransactionsProps {
+
+interface FoodTransactionsProps {
     onTransactionEdit?: (transaction: FoodTransaction) => void;
     foodItemIdFilter: number;
     codeFilter: string;
 }
+
 const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(({ onTransactionEdit, foodItemIdFilter, codeFilter }, ref) => {
     const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
@@ -41,7 +43,7 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
         []
     )
 
-    const { data: transactions = [], refetch, isLoading } = useQuery<FoodTransaction[]>({
+    const { data: transactions = [], isLoading, refetch } = useQuery<FoodTransaction[]>({
         queryKey: ['transactions', foodItemIdFilter],
         queryFn: async () => {
             let params = new URLSearchParams();

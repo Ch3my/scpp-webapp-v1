@@ -1,4 +1,4 @@
-import React, { useRef, useState, lazy, Suspense } from 'react';
+import { useState, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
 import { useQuery } from '@tanstack/react-query';
@@ -49,12 +49,8 @@ const Dashboard: React.FC = () => {
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const [searchPhraseIgnoreOtherFilters, setSearchPhraseIgnoreOtherFilters] = useState<boolean>(true)
     const [openDocDialog, setOpenDocDialog] = useState<boolean>(false);
-    const monthlyChartRef = useRef<{ refetchData?: () => void }>(null)
-    const barChartRef = useRef<{ refetchData?: () => void }>(null)
-    const radarChartRef = useRef<{ refetchData?: () => void }>(null)
-    const percentageRef = useRef<{ refetchData?: () => void }>(null)
-    const yearlySumRef = useRef<{ refetchData?: () => void }>(null)
-    const categoryTimeseriesRef = useRef<{ refetchData?: () => void }>(null)
+    // useTransition for filter changes - keeps UI responsive while fetching new data
+    const [isFilterPending, startFilterTransition] = useTransition();
 
     const fetchDocs = async () => {
         let params = new URLSearchParams();
@@ -113,37 +109,39 @@ const Dashboard: React.FC = () => {
     }
 
     const handleTipoDocChange = (tipoDoc: string, resetAll: boolean) => {
-        const parsedTipoDoc = parseInt(tipoDoc);
-        setSelectedTipoDoc(parsedTipoDoc);
+        startFilterTransition(() => {
+            const parsedTipoDoc = parseInt(tipoDoc);
+            setSelectedTipoDoc(parsedTipoDoc);
 
-        let newFechaInicio = fechaInicio;
-        let newFechaTermino = fechaTermino;
+            let newFechaInicio = fechaInicio;
+            let newFechaTermino = fechaTermino;
 
-        if (parsedTipoDoc === 1) {
-            newFechaInicio = DateTime.now().startOf('month');
-            newFechaTermino = DateTime.now().endOf('month');
-        } else if (parsedTipoDoc === 2 || parsedTipoDoc === 3) {
-            newFechaInicio = DateTime.now().startOf('year');
-        }
+            if (parsedTipoDoc === 1) {
+                newFechaInicio = DateTime.now().startOf('month');
+                newFechaTermino = DateTime.now().endOf('month');
+            } else if (parsedTipoDoc === 2 || parsedTipoDoc === 3) {
+                newFechaInicio = DateTime.now().startOf('year');
+            }
 
-        setFechaInicio(newFechaInicio);
-        setFechaTermino(newFechaTermino);
+            setFechaInicio(newFechaInicio);
+            setFechaTermino(newFechaTermino);
 
-        if (resetAll) {
-            setSearchPhraseIgnoreOtherFilters(true)
-            setSelectedCategoria(0)
-            setSearchPhrase("")
-        }
+            if (resetAll) {
+                setSearchPhraseIgnoreOtherFilters(true)
+                setSelectedCategoria(0)
+                setSearchPhrase("")
+            }
+        });
     };
 
-    const onBarClick = async (catId: number, nMonths: number) => {
-        let newFechaInicio = fechaInicio;
-        let newFechaTermino = fechaTermino;
-        newFechaInicio = DateTime.now().minus({ months: nMonths }).startOf('month');
-        newFechaTermino = DateTime.now().endOf('month');
-        setFechaInicio(newFechaInicio);
-        setFechaTermino(newFechaTermino);
-        setSelectedCategoria(catId)
+    const onBarClick = (catId: number, nMonths: number) => {
+        startFilterTransition(() => {
+            const newFechaInicio = DateTime.now().minus({ months: nMonths }).startOf('month');
+            const newFechaTermino = DateTime.now().endOf('month');
+            setFechaInicio(newFechaInicio);
+            setFechaTermino(newFechaTermino);
+            setSelectedCategoria(catId);
+        });
     }
 
     return (
@@ -187,13 +185,13 @@ const Dashboard: React.FC = () => {
                                 <TableHead className="text-right">Monto</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody style={{ opacity: isFetching ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                        <TableBody style={{ opacity: isFetching || isFilterPending ? 0.5 : 1, transition: 'opacity 0.2s' }}>
                             {docs.length === 0 && !isLoading && (
                                 <TableRow className='text-center text-muted-foreground'>
                                     <TableCell colSpan={3}>Sin Datos</TableCell>
                                 </TableRow>)}
                             {docs.map((doc: any, index: number) => (
-                                <TableRow key={index} onClick={() => !isFetching && handleRowClick(doc)} style={{ cursor: isFetching ? 'not-allowed' : 'pointer' }}>
+                                <TableRow key={index} onClick={() => !(isFetching || isFilterPending) && handleRowClick(doc)} style={{ cursor: isFetching || isFilterPending ? 'not-allowed' : 'pointer' }}>
                                     <TableCell>{doc.fecha}</TableCell>
                                     <TableCell>{doc.proposito}</TableCell>
                                     <TableCell className="text-right">{numeral(doc.monto).format("0,0")}</TableCell>
@@ -206,20 +204,20 @@ const Dashboard: React.FC = () => {
             <div className="grid gap-2 overflow-auto h-full">
                 <Suspense fallback={null}>
                     <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "minmax(16rem, 5fr) 3fr 6fr" }} >
-                        <UsagePercentage ref={percentageRef} />
-                        <YearlySum ref={yearlySumRef} />
-                        <CategoriasRadial ref={radarChartRef} />
+                        <UsagePercentage />
+                        <YearlySum />
+                        <CategoriasRadial />
                     </div>
                 </Suspense>
                 <Suspense fallback={null}>
                     <div className="grid gap-2" style={{ gridTemplateColumns: '5fr 3fr' }}>
-                        <MonthlyGraphChart ref={monthlyChartRef} />
-                        <GraficoCategorias onBarClick={(catId, nMonths) => onBarClick(catId, nMonths)} ref={barChartRef} />
+                        <MonthlyGraphChart />
+                        <GraficoCategorias onBarClick={(catId, nMonths) => onBarClick(catId, nMonths)} />
                     </div>
                 </Suspense>
                 <Suspense fallback={null}>
                     <div className="grid gap-2">
-                        <ExpensesByCategoryTimeseriesChart ref={categoryTimeseriesRef} />
+                        <ExpensesByCategoryTimeseriesChart />
                     </div>
                 </Suspense>
             </div>

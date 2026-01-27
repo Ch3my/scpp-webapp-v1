@@ -15,6 +15,7 @@ import { Label } from "@/components/ui/label"
 import { CirclePlus, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
@@ -32,11 +33,10 @@ interface FoodItemPayload {
 
 const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, id, hideButton = false }) => {
     const { apiPrefix, sessionId } = useAppState()
-    const [loading, setLoading] = useState<boolean>(false);
+    const queryClient = useQueryClient();
     const [nombre, setNombre] = useState<string>("");
     const [unit, setUnit] = useState<string>("");
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
-    // Decide whether to use the parent's isOpen or our local state
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
     const isEditing = !!id;
 
@@ -68,26 +68,35 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
     }, [id, isOpen, apiPrefix]);
 
     const handleDialogChange = (open: boolean) => {
-        // If we have a parent controlling it, call the parent's callback
         onOpenChange?.(open);
-
-        // Otherwise, fall back to local state
         if (controlledIsOpen === undefined) {
             setUncontrolledIsOpen(open);
         }
-
-        // If closing the dialog, reset fields
-        if (!open) {
-            setTimeout(() => {
-                if (!isEditing) {
-                    setNombre("");
-                    setUnit("");
-                }
-            }, 100);
-        }
     };
 
-    const handleSave = async () => {
+    const mutation = useMutation({
+        mutationFn: async (payload: FoodItemPayload) => {
+            const response = await fetch(`${apiPrefix}/food/item`, {
+                method: isEditing ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error('Failed to save');
+            return response.json();
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['foods'] });
+            toast(isEditing ? "Producto actualizado" : "Producto guardado");
+            handleDialogChange(false);
+            setNombre("");
+            setUnit("");
+        },
+        onError: () => {
+            toast.error(isEditing ? "Error al actualizar el producto" : "Error al guardar el producto");
+        }
+    });
+
+    const handleSave = () => {
         if (nombre == "") {
             toast("El nombre no puede estar vacío");
             return;
@@ -96,7 +105,6 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
             toast("La unidad no puede estar vacía");
             return;
         }
-        setLoading(true);
 
         const payload: FoodItemPayload = {
             sessionHash: sessionId,
@@ -104,38 +112,12 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
             unit: unit,
         };
 
-        // If editing, add the ID to the payload
         if (isEditing && id) {
             payload.id = id;
         }
 
-        try {
-            await fetch(`${apiPrefix}/food/item`, {
-                method: isEditing ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-
-            toast(isEditing ? "Producto actualizado" : "Producto guardado");
-            handleDialogChange(false);
-        } catch (error) {
-            console.error("Error saving food item:", error);
-            toast.error(isEditing ? "Error al actualizar el producto" : "Error al guardar el producto");
-        } finally {
-            setTimeout(() => {
-                // Do not change until dialog closes
-                setLoading(false);
-                if (!isEditing) {
-                    setNombre("");
-                    setUnit("");
-                }
-            }, 100);
-        }
+        mutation.mutate(payload);
     };
-
-    useEffect(() => {
-
-    }, [isOpen])
 
     return (
         <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -179,8 +161,8 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
                     </div>
                 </div>
                 <DialogFooter>
-                    <Button onClick={handleSave} disabled={loading}>
-                        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    <Button onClick={handleSave} disabled={mutation.isPending}>
+                        {mutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         {isEditing ? "Actualizar" : "Guardar"}
                     </Button>
                 </DialogFooter>
