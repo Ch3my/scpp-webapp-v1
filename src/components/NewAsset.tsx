@@ -38,10 +38,10 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
   const handleImageUpload = (file: File) => {
     Resizer.imageFileResizer(
       file,
-      1280,
-      1280,
+      1920,
+      1920,
       "JPEG",
-      100,
+      90,
       0,
       (uri) => {
         setImage(uri as string)
