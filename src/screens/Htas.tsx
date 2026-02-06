@@ -1,6 +1,6 @@
 import { useAppState } from "@/AppState";
 import { Button } from "@/components/ui/button"
-
+import api from "@/lib/api";
 import { useNavigate } from "react-router"
 import {
     Card,
@@ -11,18 +11,12 @@ import {
 } from "@/components/ui/card"
 
 function Htas() {
-    const { apiPrefix, sessionId, setLoggedIn, setSessionId } = useAppState();
+    const { setLoggedIn, setSessionId } = useAppState();
     let navigate = useNavigate();
 
     const logout = async () => {
         try {
-            await fetch(`${apiPrefix}/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ sessionHash: sessionId }),
-            }).then(response => response.json())
+            await api.post("/login")
 
             // TODO Check Error
             setLoggedIn(false)
@@ -36,7 +30,7 @@ function Htas() {
     return (
         <div className="flex justify-center items-center h-screen w-screen">
 
-            <Card className="w-[350px]">
+            <Card className="w-87.5">
                 <CardHeader>
                     <CardTitle>Opciones</CardTitle>
                     <CardDescription></CardDescription>

@@ -21,37 +21,23 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { toast } from 'sonner';
 import { Skeleton } from './ui/skeleton';
+import api from "@/lib/api";
 
 interface FoodScreenTableProps {
-    apiPrefix: string;
-    sessionId: string;
     onEditFoodItem: (id: number) => void;
     onOpenFoodItemDialog: (isOpen: boolean) => void;
 }
 
-export function FoodScreenTable({ apiPrefix, sessionId, onEditFoodItem, onOpenFoodItemDialog }: FoodScreenTableProps) {
+export function FoodScreenTable({ onEditFoodItem, onOpenFoodItemDialog }: FoodScreenTableProps) {
     const queryClient = useQueryClient();
     const [sorting, setSorting] = React.useState<SortingState>([])
 
     const { data: foods = [], isLoading } = useQuery<Food[]>({
         queryKey: ['foods'],
         queryFn: async () => {
-            let params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
+            const { data: apiData } = await api.get("/food/item-quantity");
 
-            let response = await fetch(`${apiPrefix}/food/item-quantity?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            if (!response.ok) {
-                console.error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            let apiData: any[] = await response.json();
-
-            const transformedData = apiData.map(item => ({
+            const transformedData = apiData.map((item: any) => ({
                 id: item.id,
                 name: item.name,
                 unit: item.unit,
@@ -64,15 +50,7 @@ export function FoodScreenTable({ apiPrefix, sessionId, onEditFoodItem, onOpenFo
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            const response = await fetch(`${apiPrefix}/food/item`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ sessionHash: sessionId, id: id }),
-
-            });
-            const data = await response.json();
+            const { data } = await api.delete("/food/item", { data: { id } });
             if (data.hasErrors) {
                 throw new Error(data.errorDescription[0]);
             }

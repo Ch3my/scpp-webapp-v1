@@ -1,9 +1,9 @@
 import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } from 'react';
-import { useAppState } from "@/AppState"
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { useQuery } from '@tanstack/react-query';
+import api from "@/lib/api";
 
 const OKLCH_GREEN_600 = { l: 62.7, c: 0.194, h: 149.214 };
 const OKLCH_RED_600 = { l: 57.7, c: 0.245, h: 27.325 };
@@ -23,7 +23,6 @@ const getPercentageColor = (percent: number) => {
 
 
 function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
-    const { apiPrefix, sessionId } = useAppState()
     const [topGastos, setTopGastos] = useState<any[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
@@ -31,13 +30,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     const { data, isLoading, refetch } = useQuery({
         queryKey: ['dashboard', 'usage-percentage'],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            const response = await fetch(`${apiPrefix}/curr-month-spending?${params.toString()}`, {
-                method: "GET",
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const result = await response.json();
+            const { data: result } = await api.get("/curr-month-spending");
 
             const gasto = result.data.find((o: any) => o.fk_tipoDoc == 1);
             const ingresos = result.data.find((o: any) => o.fk_tipoDoc == 3);
@@ -134,10 +127,10 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-col space-y-3">
-                        <Skeleton className="h-[50px] w-full rounded-xl" />
+                        <Skeleton className="h-12.5 w-full rounded-xl" />
                         <div className="space-y-2">
-                            <Skeleton className="h-4 w-[200px]" />
-                            <Skeleton className="h-4 w-[150px]" />
+                            <Skeleton className="h-4 w-50" />
+                            <Skeleton className="h-4 w-37.5" />
                         </div>
                     </div>
                 </CardContent>

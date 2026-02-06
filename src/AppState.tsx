@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import api from "@/lib/api"
 
 
 interface State {
@@ -18,7 +19,7 @@ interface State {
 
 export const useAppState = create<State>()(
     persist(
-        (set, get) => ({
+        (set) => ({
             isLoggedIn: false,
             apiPrefix: "",
             sessionId: "",
@@ -28,13 +29,8 @@ export const useAppState = create<State>()(
             setApiPrefix: (apiPrefix: string) => set({ apiPrefix }),
             setSessionId: (sessionId: string) => set({ sessionId }),
             fetchCategorias: async () => {
-                const { apiPrefix, sessionId } = get()
                 try {
-                    const response = await fetch(`${apiPrefix}/categorias?sessionHash=${sessionId}`, {
-                        method: "GET",
-                        headers: { "Content-Type": "application/json" },
-                    })
-                    const data = await response.json()
+                    const { data } = await api.get("/categorias")
                     set({ categorias: data })
                 } catch (error) {
                     console.error("Failed to fetch categorias:", error)
@@ -43,13 +39,8 @@ export const useAppState = create<State>()(
 
             // Fetch tipoDocs from your API
             fetchTipoDocs: async () => {
-                const { apiPrefix, sessionId } = get()
                 try {
-                    const response = await fetch(`${apiPrefix}/tipo-docs?sessionHash=${sessionId}`, {
-                        method: "GET",
-                        headers: { "Content-Type": "application/json" },
-                    })
-                    const data = await response.json()
+                    const { data } = await api.get("/tipo-docs")
                     set({ tipoDocs: data })
                 } catch (error) {
                     console.error("Failed to fetch tipoDocs:", error)

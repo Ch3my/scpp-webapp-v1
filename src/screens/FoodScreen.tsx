@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { FoodScreenTable } from '@/components/FoodScreenTable';
 import { ComboboxAlimentos } from '@/components/ComboboxAlimentos';
 
-import { useAppState } from '@/AppState';
 import ScreenTitle from '@/components/ScreenTitle';
 
 import FoodTransactions from '@/components/FoodTransactions';
@@ -17,7 +16,6 @@ import { Separator } from '@/components/ui/separator';
 import { FoodTransaction } from '@/models/FoodTransaction';
 
 const FoodScreen = () => {
-    const { apiPrefix, sessionId } = useAppState()
     const [openFoodItemDialog, setOpenFoodItemDialog] = useState(false);
     const [openFoodTransactionDialog, setOpenFoodTransactionDialog] = useState(false);
     const [selectedFoodItemId, setSelectedFoodItemId] = useState(0);
@@ -61,8 +59,6 @@ const FoodScreen = () => {
                     }}><CirclePlus /></Button>
                 </div>
                 <FoodScreenTable
-                    apiPrefix={apiPrefix}
-                    sessionId={sessionId}
                     onEditFoodItem={setSelectedFoodItemId}
                     onOpenFoodItemDialog={setOpenFoodItemDialog}
                 />

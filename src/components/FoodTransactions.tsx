@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
-import { useAppState } from '@/AppState';
 import { FoodTransaction } from '@/models/FoodTransaction';
+import api from "@/lib/api";
 import { DateTime } from 'luxon';
 import {
     ColumnFiltersState,
@@ -36,7 +36,6 @@ interface FoodTransactionsProps {
 }
 
 const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(({ onTransactionEdit, foodItemIdFilter, codeFilter }, ref) => {
-    const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
     const [sorting, setSorting] = useState<SortingState>([{ id: 'bestBefore', desc: false }]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
@@ -46,21 +45,7 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
     const { data: transactions = [], isLoading, refetch } = useQuery<FoodTransaction[]>({
         queryKey: ['transactions', foodItemIdFilter],
         queryFn: async () => {
-            let params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("page", String(1));
-            params.set("itemId", String(foodItemIdFilter));
-
-            let response = await fetch(`${apiPrefix}/food/transaction?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Accept': 'application/json'
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            let apiData: any[] = await response.json();
+            const { data: apiData } = await api.get(`/food/transaction?page=1&itemId=${foodItemIdFilter}`);
 
             return apiData.map((item: any) => {
                 let food = {
@@ -93,14 +78,7 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            await fetch(`${apiPrefix}/food/transaction`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ sessionHash: sessionId, id: id }),
-
-            }).then(response => response.json())
+            await api.delete("/food/transaction", { data: { id } });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });

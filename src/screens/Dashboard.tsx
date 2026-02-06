@@ -2,6 +2,7 @@ import { useState, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
 import { useQuery } from '@tanstack/react-query';
+import api from "@/lib/api";
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -40,7 +41,7 @@ const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/Expens
 
 
 const Dashboard: React.FC = () => {
-    const { apiPrefix, sessionId, tipoDocs } = useAppState()
+    const { tipoDocs } = useAppState()
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
@@ -54,7 +55,6 @@ const Dashboard: React.FC = () => {
 
     const fetchDocs = async () => {
         let params = new URLSearchParams();
-        params.set("sessionHash", sessionId);
         params.set("fechaInicio", fechaInicio?.toFormat('yyyy-MM-dd'));
         params.set("fechaTermino", fechaTermino?.toFormat('yyyy-MM-dd'));
         params.set("searchPhrase", searchPhrase);
@@ -65,13 +65,8 @@ const Dashboard: React.FC = () => {
             params.set("fk_categoria", selectedCategoria.toString());
         }
 
-        const response = await fetch(`${apiPrefix}/documentos?${params.toString()}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        return response.json();
+        const { data } = await api.get(`/documentos?${params.toString()}`);
+        return data;
     }
 
     const { data: docs = [], isLoading, isFetching } = useQuery({
@@ -180,7 +175,7 @@ const Dashboard: React.FC = () => {
                     <Table size='compact'>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[100px]">Fecha</TableHead>
+                                <TableHead className="w-25">Fecha</TableHead>
                                 <TableHead>Proposito</TableHead>
                                 <TableHead className="text-right">Monto</TableHead>
                             </TableRow>

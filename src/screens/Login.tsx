@@ -49,7 +49,7 @@ export default function Login() {
 
     return (
         <div className="items-center justify-center w-screen h-screen flex">
-            <Card className="w-[500px]">
+            <Card className="w-125">
                 <CardHeader>
                     <CardTitle>Iniciar Sesion</CardTitle>
                     <CardDescription>En sistema de control de presupuestos personales</CardDescription>

@@ -1,7 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useState } from "react"
 import { CartesianGrid, LabelList, Line, LineChart, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
-import { useAppState } from "@/AppState"
 import {
     ChartConfig,
     ChartContainer,
@@ -14,6 +13,7 @@ import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import numeral from "numeral";
 import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 Settings.defaultLocale = "es";
 
@@ -46,21 +46,14 @@ interface ExpensesByCategoryTimeseriesChartProps {
 
 function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesChartProps, ref: React.Ref<unknown>) {
     const { filterTopN } = props;
-    const { apiPrefix, sessionId } = useAppState()
     const [activeChart, setActiveChart] = useState<string>("")
     const [nMonths, setNMonths] = useState<number>(9)
 
     const { data: expensesData, isLoading, refetch } = useQuery<ExpensesByCategoryResponse>({
         queryKey: ['dashboard', 'expenses-by-category-timeseries', nMonths],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("nMonths", nMonths.toString());
-            const response = await fetch(`${apiPrefix}/expenses-by-category-timeseries?${params.toString()}`, {
-                method: "GET",
-                headers: { 'Content-Type': 'application/json' }
-            });
-            return response.json();
+            const { data } = await api.get(`/expenses-by-category-timeseries?nMonths=${nMonths}`);
+            return data;
         },
     });
 
@@ -138,7 +131,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                     <CardDescription>{nMonths} meses</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Skeleton className="h-[250px] w-full" />
+                    <Skeleton className="h-62.5 w-full" />
                 </CardContent>
             </Card>
         )
@@ -146,7 +139,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
 
     return (
         <Card className="py-4 sm:py-0">
-            <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
+            <CardHeader className="flex flex-col items-stretch border-b p-0! sm:flex-row">
                 <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
                     <CardTitle className="flex items-center gap-2">
                         Gastos por categoría
@@ -179,7 +172,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                             <button
                                 key={key}
                                 data-active={activeChart === key}
-                                className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 border-t px-3 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-6 sm:py-4 flex-shrink-0"
+                                className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 border-t px-3 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-6 sm:py-4 shrink-0"
                                 onClick={() => setActiveChart(key)}
                             >
                                 <span className="text-muted-foreground">
@@ -196,7 +189,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
             <CardContent className="px-2 sm:p-6">
                 <ChartContainer
                     config={chartConfig}
-                    className="aspect-auto h-[200px] w-full"
+                    className="aspect-auto h-50 w-full"
                 >
                     <LineChart
                         accessibilityLayer

@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useAppState } from "./AppState";
 import { useNavigate } from "react-router";
 import LoadingCircle from "./components/LoadingCircle";
+import api from "@/lib/api";
 
 export default function App() {
   let navigate = useNavigate();
@@ -17,12 +18,7 @@ export default function App() {
     }
 
     async function checkLoginStatus() {
-      const check = await fetch(`${apiPrefix}/check-session?sessionHash=${sessionId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }).then(response => response.json())
+      const { data: check } = await api.get("/check-session")
 
       if (check.hasErrors) {
         setLoggedIn(false)

@@ -1,4 +1,3 @@
-import { useAppState } from "@/AppState"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -21,6 +20,7 @@ import { ComboboxAlimentos } from "./ComboboxAlimentos";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FoodTransaction } from "@/models/FoodTransaction";
+import api from "@/lib/api";
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
@@ -31,7 +31,6 @@ interface Props {
 }
 
 const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, hideButton, initialData }) => {
-    const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
     const [codigo, setCodigo] = useState<string>("");
     const [itemId, setItemId] = useState<number>(0);
@@ -48,19 +47,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
     const { data: freshData } = useQuery<FoodTransaction>({
         queryKey: ['transaction', initialData?.id],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("id", initialData!.id.toString());
-            const response = await fetch(`${apiPrefix}/food/transaction?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const data = await response.json();
+            const { data } = await api.get(`/food/transaction?id=${initialData!.id}`);
             const item = data[0];
             return {
                 id: item.id,
@@ -102,17 +89,13 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
 
     const mutation = useMutation({
         mutationFn: async (payload: any) => {
-            const method = isEditMode ? 'PUT' : 'POST';
-            let reponse = await fetch(`${apiPrefix}/food/transaction`, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            }).then(response => response.json());
+            const method = isEditMode ? 'put' : 'post';
+            const { data: response } = await api[method]("/food/transaction", payload);
 
-            if (reponse.hasErrors) {
-                throw new Error(reponse.errorDescription[0]);
+            if (response.hasErrors) {
+                throw new Error(response.errorDescription[0]);
             }
-            return reponse;
+            return response;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions'] });
@@ -141,7 +124,6 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
         }
         let calculatedBestBefore = bestBefore ? bestBefore.toFormat("yyyy-MM-dd") : null;
         const payload: any = {
-            sessionHash: sessionId,
             foodItemId: Number(itemId),
             quantity: cantidad,
             transactionType: accion,

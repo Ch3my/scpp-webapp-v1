@@ -1,6 +1,6 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
-import { useAppState } from "@/AppState";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
+import api from "@/lib/api";
 import {
     ChartConfig,
     ChartContainer,
@@ -78,23 +78,9 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
         const [hover, setHover] = useState<number | null>(null)
         const [nMonths, setNMonths] = useState<number>(3);
         const [visibleCount, setVisibleCount] = useState<number | null>(null);
-        const { apiPrefix, sessionId } = useAppState();
 
         const fetchData = async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("nMonths", nMonths.toString());
-
-            const response = await fetch(
-                `${apiPrefix}/expenses-by-category?${params.toString()}`,
-                {
-                    method: "GET",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                }
-            );
-            const result = await response.json();
+            const { data: result } = await api.get(`/expenses-by-category?nMonths=${nMonths}`);
 
             // Transform the raw data into the shape Recharts needs
             // We'll use the `data` array from the response:
@@ -232,7 +218,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                                 min={MIN_CATEGORIES}
                                 max={totalCategories}
                                 step={1}
-                                className="flex-1 [&>span:first-child]:h-1.5 [&_[role=slider]]:h-4 [&_[role=slider]]:w-4 [&_[role=slider]]:border [&_[role=slider]]:transition-transform [&_[role=slider]:hover]:scale-125"
+                                className="flex-1 [&>span:first-child]:h-1.5 **:[[role=slider]]:h-4 **:[[role=slider]]:w-4 **:[[role=slider]]:border **:[[role=slider]]:transition-transform [&_[role=slider]:hover]:scale-125"
                             />
                         </div>
                     )}

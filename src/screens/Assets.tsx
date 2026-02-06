@@ -1,6 +1,6 @@
 import { useTransition, useOptimistic, useState, type MouseEvent } from 'react';
-import { useAppState } from "@/AppState"
 import ScreenTitle from '@/components/ScreenTitle';
+import api from "@/lib/api";
 
 import AssetImgViewer from '@/components/AssetImgViewer';
 import { Button } from "@/components/ui/button"
@@ -34,7 +34,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Asset } from '@/models/Asset';
 
 const Assets = () => {
-    const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
     const [base64Img, setBase64Img] = useState("");
     const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
@@ -45,15 +44,8 @@ const Assets = () => {
     const { data: assets = [], isLoading } = useQuery<Asset[]>({
         queryKey: ['assets'],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            const response = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-            return response.json();
+            const { data } = await api.get("/assets");
+            return data;
         }
     });
 
@@ -65,13 +57,7 @@ const Assets = () => {
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            await fetch(`${apiPrefix}/assets`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ sessionHash: sessionId, id }),
-            });
+            await api.delete("/assets", { data: { id } });
         },
         onSuccess: () => {
             toast('Documento Eliminado');
@@ -89,15 +75,7 @@ const Assets = () => {
         }
 
         startAssetTransition(async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("id[]", String(id));
-            const data = await fetch(`${apiPrefix}/assets?${params.toString()}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            }).then(response => response.json());
+            const { data } = await api.get(`/assets?id[]=${id}`);
             setBase64Img(data[0].assetData);
         });
     };
@@ -122,7 +100,7 @@ const Assets = () => {
                     <Table size='compact'>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-[100px]">Fecha</TableHead>
+                                <TableHead className="w-25">Fecha</TableHead>
                                 <TableHead>Descripcion</TableHead>
                                 <TableHead>Categoria</TableHead>
                                 <TableHead></TableHead>
@@ -171,7 +149,7 @@ const Assets = () => {
                 </div>
             )}
             <Dialog open={assetToDelete !== null} onOpenChange={(open) => !open && setAssetToDelete(null)}>
-                <DialogContent className="sm:max-w-[425px]">
+                <DialogContent className="sm:max-w-106.25">
                     <DialogHeader>
                         <DialogTitle>Eliminar Asset?</DialogTitle>
                         <DialogDescription>

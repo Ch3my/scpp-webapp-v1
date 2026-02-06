@@ -7,6 +7,7 @@ import { DateTime } from 'luxon';
 import { useAppState } from "@/AppState"
 import { toast } from "sonner"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
+import api from "@/lib/api";
 
 import {
     Select,
@@ -43,7 +44,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [disableCategoria, setDisableCategoria] = useState<boolean>(false);
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
-    const { apiPrefix, sessionId, tipoDocs } = useAppState()
+    const { tipoDocs } = useAppState()
     const queryClient = useQueryClient();
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
@@ -57,11 +58,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const { data: freshData } = useQuery<Documento>({
         queryKey: ['doc', initialData?.id],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("id[]", initialData!.id.toString());
-            const response = await fetch(`${apiPrefix}/documentos?${params.toString()}`);
-            const data = await response.json();
+            const { data } = await api.get(`/documentos?id[]=${initialData!.id}`);
             return data[0];
         },
         enabled: isOpen && !!initialData,
@@ -102,12 +99,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
-            const response = await fetch(`${apiPrefix}/documentos`, {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sessionHash: sessionId, id: initialData?.id }),
-            });
-            return response.json();
+            const { data } = await api.delete("/documentos", { data: { id: initialData?.id } });
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
@@ -122,13 +115,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
 
     const saveMutation = useMutation({
         mutationFn: async (payload: any) => {
-            const method = isEditMode ? 'PUT' : 'POST';
-            const response = await fetch(`${apiPrefix}/documentos`, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            return response.json();
+            const method = isEditMode ? 'put' : 'post';
+            const { data } = await api[method]("/documentos", payload);
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
@@ -150,13 +139,12 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             toast('Debe seleccionar una categoria');
             return;
         }
-        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; sessionHash: string } = {
+        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null } = {
             monto,
             proposito,
             fecha: fecha.toFormat('yyyy-MM-dd'),
             fk_tipoDoc: tipoDoc,
-            fk_categoria: tipoDoc == 1 ? categoria : null,
-            sessionHash: sessionId
+            fk_categoria: tipoDoc == 1 ? categoria : null
         };
         if (isEditMode) {
             payload.id = initialData!.id;

@@ -1,26 +1,17 @@
 import React, { forwardRef, useImperativeHandle } from 'react';
-import { useAppState } from "@/AppState"
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
 import { ArrowBigDownDash, ArrowBigUpDash, Minus } from 'lucide-react';
 import { CardHeader, CardDescription, CardTitle, Card, CardContent } from './ui/card';
 import { DateTime } from 'luxon';
 import { useQuery } from '@tanstack/react-query';
+import api from "@/lib/api";
 
 function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
-  const { apiPrefix, sessionId } = useAppState()
-
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['dashboard', 'yearly-sum'],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      params.set("sessionHash", sessionId);
-      params.set("nMonths", "12");
-      const response = await fetch(`${apiPrefix}/yearly-sum?${params.toString()}`, {
-        method: "GET",
-        headers: { 'Content-Type': 'application/json' }
-      });
-      const result = await response.json();
+      const { data: result } = await api.get("/yearly-sum?nMonths=12");
 
       const gasto = result.data.find((o: any) => o.id == 1);
       const ingreso = result.data.find((o: any) => o.id == 3);
@@ -65,12 +56,12 @@ function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
         <CardHeader>
           <CardDescription>Utilidad 13 meses</CardDescription>
           <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
-            <Skeleton className="h-[50px] w-full rounded-xl px-4" />
+            <Skeleton className="h-12.5 w-full rounded-xl px-4" />
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col space-y-3">
-            <Skeleton className="h-[25px] w-full rounded-xl px-4" />
+            <Skeleton className="h-6.25 w-full rounded-xl px-4" />
             <div className="space-y-2">
               <Skeleton className="h-4 w-full px-4" />
               <Skeleton className="h-4 w-full px-4" />

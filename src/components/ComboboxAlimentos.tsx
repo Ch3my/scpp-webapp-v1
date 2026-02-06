@@ -20,7 +20,7 @@ import { Food } from "@/models/Food"
 import { useQuery } from '@tanstack/react-query';
 
 import { DateTime } from 'luxon';
-import { useAppState } from "@/AppState"
+import api from "@/lib/api";
 
 interface ComboboxAlimentosProps {
   value: number;
@@ -40,7 +40,6 @@ export function ComboboxAlimentos({
   onOpenChange
 }: ComboboxAlimentosProps) {
   const [internalOpen, setInternalOpen] = React.useState(false);
-  const { apiPrefix, sessionId } = useAppState()
 
   // Use controlled open state if provided, otherwise use internal state
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
@@ -49,22 +48,9 @@ export function ComboboxAlimentos({
   const { data: foods = [] } = useQuery<Food[]>({
     queryKey: ['foodsCombobox'], // Use a different query key to avoid conflicts
     queryFn: async () => {
-      let params = new URLSearchParams();
-      params.set("sessionHash", sessionId);
+      const { data: apiData } = await api.get("/food/item-quantity");
 
-      let response = await fetch(`${apiPrefix}/food/item-quantity?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      if (!response.ok) {
-        console.error(`HTTP error! status: ${response.status}, statusText: ${response.statusText}`);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      let apiData: any[] = await response.json();
-
-      const transformedData = apiData.map(item => ({
+      const transformedData = apiData.map((item: any) => ({
         id: item.id,
         name: item.name,
         unit: item.unit,
@@ -101,14 +87,14 @@ export function ComboboxAlimentos({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between font-normal w-[300px]"
+          className="justify-between font-normal w-75"
           disabled={disabled}
         >
           {getDisplayText()}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-75 p-0" align="start">
         <Command>
           <CommandInput className="h-9" />
           <CommandList>

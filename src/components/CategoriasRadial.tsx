@@ -7,11 +7,11 @@ import {
 } from "@/components/ui/chart"
 import { DateTime } from "luxon"
 import { forwardRef, useImperativeHandle } from "react"
-import { useAppState } from "@/AppState"
 import numeral from "numeral"
 import { Skeleton } from "./ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { useQuery } from "@tanstack/react-query"
+import api from "@/lib/api"
 
 const chartConfig = {
     desktop: {
@@ -22,23 +22,11 @@ const chartConfig = {
 
 function CategoriasRadial(_props: unknown, ref: React.Ref<unknown>) {
     const fechaInicio = DateTime.now();
-    const { apiPrefix, sessionId } = useAppState();
 
     const { data: chartData = [], isLoading, refetch } = useQuery({
         queryKey: ['dashboard', 'categorias-radial'],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("nMonths", "0");
-
-            const response = await fetch(
-                `${apiPrefix}/expenses-by-category?${params.toString()}`,
-                {
-                    method: "GET",
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-            const result = await response.json();
+            const { data: result } = await api.get("/expenses-by-category?nMonths=0");
             return result.data.slice(0, 6).map((item: any) => ({
                 category: item.label,
                 amount: item.data,

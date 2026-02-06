@@ -1,4 +1,3 @@
-import { useAppState } from "@/AppState"
 import { Button } from "@/components/ui/button"
 
 import {
@@ -16,6 +15,7 @@ import { CirclePlus, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
+import api from "@/lib/api"
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
@@ -25,14 +25,12 @@ interface Props {
 }
 
 interface FoodItemPayload {
-    sessionHash: string;
     name: string;
     unit: string;
     id?: number; // Make id optional in the payload type
 }
 
 const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, id, hideButton = false }) => {
-    const { apiPrefix, sessionId } = useAppState()
     const queryClient = useQueryClient();
     const [nombre, setNombre] = useState<string>("");
     const [unit, setUnit] = useState<string>("");
@@ -46,8 +44,7 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
             if (id) {
                 if (id > 0 && isOpen) {
                     try {
-                        const response = await fetch(`${apiPrefix}/food/items?id[]=${id}&sessionHash=${sessionId}`);
-                        const data = await response.json();
+                        const { data } = await api.get(`/food/items?id[]=${id}`);
 
                         if (data && data.length > 0) {
                             const item = data[0];
@@ -65,7 +62,7 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
         };
 
         fetchFoodItem();
-    }, [id, isOpen, apiPrefix]);
+    }, [id, isOpen]);
 
     const handleDialogChange = (open: boolean) => {
         onOpenChange?.(open);
@@ -76,13 +73,9 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
 
     const mutation = useMutation({
         mutationFn: async (payload: FoodItemPayload) => {
-            const response = await fetch(`${apiPrefix}/food/item`, {
-                method: isEditing ? 'PUT' : 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-            });
-            if (!response.ok) throw new Error('Failed to save');
-            return response.json();
+            const method = isEditing ? 'put' : 'post';
+            const { data } = await api[method]("/food/item", payload);
+            return data;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['foods'] });
@@ -107,7 +100,6 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
         }
 
         const payload: FoodItemPayload = {
-            sessionHash: sessionId,
             name: nombre,
             unit: unit,
         };
@@ -126,7 +118,7 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
                     <Button variant="outline"><CirclePlus /></Button>
                 </DialogTrigger>
             )}
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent className="sm:max-w-106.25">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? "Editar" : "Agregar"} Producto</DialogTitle>
                     <DialogDescription>

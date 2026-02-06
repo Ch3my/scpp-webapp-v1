@@ -1,7 +1,6 @@
 import { forwardRef, useImperativeHandle } from "react"
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
-import { useAppState } from "@/AppState"
 import {
     ChartConfig,
     ChartContainer,
@@ -10,6 +9,7 @@ import { Skeleton } from "./ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import numeral from "numeral";
 import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 
 Settings.defaultLocale = "es";
 
@@ -29,19 +29,11 @@ const chartConfig = {
 } satisfies ChartConfig
 
 function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
-    const { apiPrefix, sessionId } = useAppState()
-
     const { data: monthlyGraphData, isLoading, refetch } = useQuery({
         queryKey: ['dashboard', 'monthly-graph'],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set("sessionHash", sessionId);
-            params.set("nMonths", "13");
-            const response = await fetch(`${apiPrefix}/monthly-graph?${params.toString()}`, {
-                method: "GET",
-                headers: { 'Content-Type': 'application/json' }
-            });
-            return response.json();
+            const { data } = await api.get("/monthly-graph?nMonths=13");
+            return data;
         },
     });
 

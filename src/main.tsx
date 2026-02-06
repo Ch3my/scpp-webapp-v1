@@ -56,8 +56,8 @@ const RootComponent = () => {
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/config" element={<Config />} />
           <Route element={<RequireAuth />}>
-            <Route path="/config" element={<Config />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/htas" element={<Htas />} />
             <Route path="/assets" element={<Assets />} />

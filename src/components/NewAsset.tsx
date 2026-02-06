@@ -25,6 +25,7 @@ import { DateTime } from "luxon";
 import { useAppState } from "@/AppState"
 import Resizer from "react-image-file-resizer";
 import { toast } from "sonner";
+import api from "@/lib/api";
 
 export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
   const [open, setOpen] = useState(false);
@@ -33,7 +34,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
   const [fecha, setFecha] = useState<DateTime>(DateTime.now());
   const [categoria, setCategoria] = useState<number>(0);
   const [image, setImage] = useState<string>("");
-  const { apiPrefix, sessionId, categorias } = useAppState();
+  const { categorias } = useAppState();
 
   const handleImageUpload = (file: File) => {
     Resizer.imageFileResizer(
@@ -60,13 +61,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
     }
 
     try {
-      await fetch(`${apiPrefix}/assets`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ sessionHash: sessionId, descripcion, fecha, fk_categoria: categoria, assetData: image }),
-      }).then(response => response.json())
+      await api.post("/assets", { descripcion, fecha, fk_categoria: categoria, assetData: image });
       toast('Asset guardado');
       setOpen(false);
       onAssetSaved()
@@ -92,7 +87,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
       <DialogTrigger asChild>
         <Button variant="outline"><CirclePlus /></Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-106.25">
         <DialogHeader>
           <DialogTitle>Agregar Asset</DialogTitle>
           <DialogDescription></DialogDescription>
