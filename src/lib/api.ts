@@ -23,4 +23,18 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor - handle 401 errors globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      const { setLoggedIn, setSessionId } = useAppState.getState();
+      setLoggedIn(false);
+      setSessionId('');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
 export default api;
