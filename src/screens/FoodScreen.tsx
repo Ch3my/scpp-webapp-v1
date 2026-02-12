@@ -1,5 +1,5 @@
 import { useState, useTransition, useDeferredValue } from 'react';
-import { CirclePlus } from 'lucide-react';
+import { CirclePlus, ListRestart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 import { FoodScreenTable } from '@/components/FoodScreenTable';
@@ -71,6 +71,12 @@ const FoodScreen = () => {
                         <Button variant="outline" onClick={() => {
                             setOpenFoodTransactionDialog(!openFoodTransactionDialog)
                         }}><CirclePlus /></Button>
+                        <Button variant="outline" onClick={() => {
+                            startFilterTransition(() => setFoodItemIdFilter(0));
+                            setCodeFilter("");
+                        }}>
+                            <ListRestart />
+                        </Button>
                         <ComboboxAlimentos
                             value={foodItemIdFilter}
                             onChange={(value) => startFilterTransition(() => setFoodItemIdFilter(value))}
