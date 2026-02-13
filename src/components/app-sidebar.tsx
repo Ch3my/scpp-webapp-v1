@@ -1,4 +1,4 @@
-import { Home, Settings, SquarePlay, Wheat } from "lucide-react"
+import { Home, KeyRound, Settings, SquarePlay, Wheat } from "lucide-react"
 import { Link, useLocation } from "react-router"
 
 import {
@@ -28,6 +28,11 @@ const items = [
     title: "Food",
     url: "/food",
     icon: Wheat,
+  },
+  {
+    title: "API Keys",
+    url: "/api-keys",
+    icon: KeyRound,
   },
   {
     title: "Settings",

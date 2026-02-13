@@ -23,6 +23,7 @@ const Config = lazy(() => import("./screens/Config"));
 const Htas = lazy(() => import("./screens/Htas"));
 const Assets = lazy(() => import("./screens/Assets"));
 const FoodScreen = lazy(() => import("./screens/FoodScreen"));
+const ApiKeys = lazy(() => import("./screens/ApiKeys"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -62,6 +63,7 @@ const RootComponent = () => {
             <Route path="/htas" element={<Htas />} />
             <Route path="/assets" element={<Assets />} />
             <Route path="/food" element={<FoodScreen />} />
+            <Route path="/api-keys" element={<ApiKeys />} />
           </Route>
         </Routes>
       </Suspense>
