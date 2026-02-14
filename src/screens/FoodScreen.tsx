@@ -2,7 +2,7 @@ import { useState, useTransition, useDeferredValue } from 'react';
 import { CirclePlus, ListRestart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-import { FoodScreenTable } from '@/components/FoodScreenTable';
+import { FoodSummary } from '@/components/FoodSummary';
 import { ComboboxAlimentos } from '@/components/ComboboxAlimentos';
 
 import ScreenTitle from '@/components/ScreenTitle';
@@ -23,6 +23,8 @@ const FoodScreen = () => {
     const [foodItemIdFilter, setFoodItemIdFilter] = useState(0);
     const [codeFilter, setCodeFilter] = useState("");
     const [comboboxOpen, setComboboxOpen] = useState(false);
+    const [foodSummaryFilter, setFoodSummaryFilter] = useState(0);
+    const [foodSummaryComboboxOpen, setFoodSummaryComboboxOpen] = useState(false);
 
     // useTransition for filter changes - keeps Food Storage side responsive
     const [, startFilterTransition] = useTransition();
@@ -57,10 +59,23 @@ const FoodScreen = () => {
                     <Button variant="outline" onClick={() => {
                         setOpenFoodItemDialog(!openFoodItemDialog)
                     }}><CirclePlus /></Button>
+                    <Button variant="outline" onClick={() => {
+                        startFilterTransition(() => setFoodSummaryFilter(0));
+                    }}>
+                        <ListRestart />
+                    </Button>
+                    <ComboboxAlimentos
+                        value={foodSummaryFilter}
+                        onChange={(value) => startFilterTransition(() => setFoodSummaryFilter(value))}
+                        open={foodSummaryComboboxOpen}
+                        onOpenChange={setFoodSummaryComboboxOpen}
+                    />
                 </div>
-                <FoodScreenTable
+                <FoodSummary
                     onEditFoodItem={setSelectedFoodItemId}
                     onOpenFoodItemDialog={setOpenFoodItemDialog}
+                    foodItemIdFilter={foodSummaryFilter}
+                    onViewDetail={(id) => startFilterTransition(() => setFoodItemIdFilter(id))}
                 />
             </div>
             <Separator orientation="vertical" className="h-auto" />

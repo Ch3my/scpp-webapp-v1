@@ -16,19 +16,21 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Food } from "@/models/Food"
-import { columns } from "@/table-columns-def/food-screen-columns"
+import { columns } from "@/table-columns-def/food-summary-columns"
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import { toast } from 'sonner';
 import { Skeleton } from './ui/skeleton';
 import api from "@/lib/api";
 
-interface FoodScreenTableProps {
+interface FoodSummaryProps {
     onEditFoodItem: (id: number) => void;
     onOpenFoodItemDialog: (isOpen: boolean) => void;
+    foodItemIdFilter: number;
+    onViewDetail: (id: number) => void;
 }
 
-export function FoodScreenTable({ onEditFoodItem, onOpenFoodItemDialog }: FoodScreenTableProps) {
+export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFilter, onViewDetail }: FoodSummaryProps) {
     const queryClient = useQueryClient();
     const [sorting, setSorting] = React.useState<SortingState>([])
 
@@ -64,8 +66,12 @@ export function FoodScreenTable({ onEditFoodItem, onOpenFoodItemDialog }: FoodSc
         }
     })
 
+    const filteredFoods = foodItemIdFilter === 0
+        ? foods
+        : foods.filter(f => f.id === foodItemIdFilter);
+
     const table = useReactTable({
-        data: foods,
+        data: filteredFoods,
         columns,
         getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
@@ -78,7 +84,8 @@ export function FoodScreenTable({ onEditFoodItem, onOpenFoodItemDialog }: FoodSc
             editFoodItem: (id: number) => {
                 onEditFoodItem(id);
                 onOpenFoodItemDialog(true);
-            }
+            },
+            viewDetail: (id: number) => onViewDetail(id)
         }
     })
 

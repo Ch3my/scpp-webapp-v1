@@ -47,7 +47,7 @@ export const columns: ColumnDef<Food>[] = [
     {
         id: "actions",
         cell: ({ row, table }) => {
-            const { deleteFoodItem, editFoodItem } = table.options.meta as any;
+            const { deleteFoodItem, editFoodItem, viewDetail } = table.options.meta as any;
             return (
                 <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
@@ -57,6 +57,13 @@ export const columns: ColumnDef<Food>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                            onClick={() => {
+                                viewDetail(row.original.id)
+                            }}
+                        >
+                            Ver detalle
+                        </DropdownMenuItem>
                         <DropdownMenuItem
                             onClick={() => {
                                 editFoodItem(row.original.id)
