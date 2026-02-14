@@ -66,9 +66,10 @@ export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFi
         }
     })
 
-    const filteredFoods = foodItemIdFilter === 0
-        ? foods
-        : foods.filter(f => f.id === foodItemIdFilter);
+    const filteredFoods = React.useMemo(() =>
+        foodItemIdFilter === 0 ? foods : foods.filter(f => f.id === foodItemIdFilter),
+        [foods, foodItemIdFilter]
+    );
 
     const table = useReactTable({
         data: filteredFoods,

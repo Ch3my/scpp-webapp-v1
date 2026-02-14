@@ -75,7 +75,7 @@ const FoodScreen = () => {
                     onEditFoodItem={setSelectedFoodItemId}
                     onOpenFoodItemDialog={setOpenFoodItemDialog}
                     foodItemIdFilter={foodSummaryFilter}
-                    onViewDetail={(id) => startFilterTransition(() => setFoodItemIdFilter(id))}
+                    onViewDetail={(id) => setFoodItemIdFilter(id)}
                 />
             </div>
             <Separator orientation="vertical" className="h-auto" />
