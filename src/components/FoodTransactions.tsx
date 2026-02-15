@@ -45,7 +45,9 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
     const { data: transactions = [], isLoading, refetch } = useQuery<FoodTransaction[]>({
         queryKey: ['transactions', foodItemIdFilter],
         queryFn: async () => {
-            const { data: apiData } = await api.get(`/food/transaction?page=1&itemId=${foodItemIdFilter}`);
+            const params = new URLSearchParams({ page: '1' });
+            if (foodItemIdFilter !== 0) params.set('itemId', String(foodItemIdFilter));
+            const { data: apiData } = await api.get(`/food/transaction?${params}`);
 
             return apiData.map((item: any) => {
                 let food = {
