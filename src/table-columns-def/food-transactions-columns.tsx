@@ -1,6 +1,6 @@
 import { FoodTransaction } from "@/models/FoodTransaction"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine } from "lucide-react"
+import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine, Minus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -161,7 +161,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
     {
         id: "actions",
         cell: ({ row, table }) => {
-            const { onTransactionDeleted, onTransactionEdit } = table.options.meta as any;
+            const { onTransactionDeleted, onTransactionEdit, onTransactionSubtractOne } = table.options.meta as any;
             const [dialogOpen, setDialogOpen] = useState(false);
             const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -195,6 +195,17 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                                 >
                                     <FilePenLine />
                                     Editar
+                                </DropdownMenuItem>
+                            )}
+                            {row.original.transactionType === "restock" && row.original.changeQty >= 2 && (
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        onTransactionSubtractOne?.(row.original.id, row.original.changeQty - 1);
+                                        setDropdownOpen(false);
+                                    }}
+                                >
+                                    <Minus />
+                                    Restar 1
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuItem onClick={handleDeleteClick}>

@@ -89,6 +89,17 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
         }
     })
 
+    const subtractOneMutation = useMutation({
+        mutationFn: async ({ id, changeQty }: { id: number; changeQty: number }) => {
+            await api.put("/food/transaction", { id, change_qty: changeQty });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
+            queryClient.invalidateQueries({ queryKey: ['foods'] });
+            toast('Cantidad actualizada');
+        }
+    })
+
     const table = useReactTable({
         data: transactions,
         columns,
@@ -103,7 +114,8 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
         },
         meta: {
             onTransactionDeleted: (id: number) => deleteMutation.mutate(id),
-            onTransactionEdit: onTransactionEdit
+            onTransactionEdit: onTransactionEdit,
+            onTransactionSubtractOne: (id: number, changeQty: number) => subtractOneMutation.mutate({ id, changeQty })
         }
     })
 
