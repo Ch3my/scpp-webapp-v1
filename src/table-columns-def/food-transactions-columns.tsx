@@ -1,6 +1,6 @@
 import { FoodTransaction } from "@/models/FoodTransaction"
 import { ColumnDef } from "@tanstack/react-table"
-import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine, Minus } from "lucide-react"
+import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine, CircleMinus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -180,7 +180,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                 <>
                     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-4 w-6 p-0">
+                            <Button variant="ghost" className="h-8 w-8 p-0 flex items-center justify-center">
                                 <span className="sr-only">Open menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
@@ -204,7 +204,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                                         setDropdownOpen(false);
                                     }}
                                 >
-                                    <Minus />
+                                    <CircleMinus />
                                     Restar 1
                                 </DropdownMenuItem>
                             )}
