@@ -160,6 +160,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
     },
     {
         id: "actions",
+        meta: { className: "p-0" },
         cell: ({ row, table }) => {
             const { onTransactionDeleted, onTransactionEdit, onTransactionSubtractOne } = table.options.meta as any;
             const [dialogOpen, setDialogOpen] = useState(false);
@@ -180,7 +181,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
                 <>
                     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0 flex items-center justify-center">
+                            <Button variant="ghost" className="h-6 w-8 p-0 flex items-center justify-center">
                                 <span className="sr-only">Open menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
