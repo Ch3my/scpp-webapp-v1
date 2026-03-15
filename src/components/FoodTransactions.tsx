@@ -80,23 +80,37 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
 
     const deleteMutation = useMutation({
         mutationFn: async (id: number) => {
-            await api.delete("/food/transaction", { data: { id } });
+            const { data: response } = await api.delete("/food/transaction", { data: { id } });
+            if (response.hasErrors) {
+                throw new Error(response.errorDescription[0]);
+            }
+            return response;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
             queryClient.invalidateQueries({ queryKey: ['foods'] });
             toast('Transacción eliminada');
+        },
+        onError: (error: Error) => {
+            toast("Error al guardar la transacción " + error.message)
         }
     })
 
     const subtractOneMutation = useMutation({
         mutationFn: async ({ id, changeQty }: { id: number; changeQty: number }) => {
-            await api.put("/food/transaction", { id, change_qty: changeQty });
+            const { data: response } = await api.put("/food/transaction", { id, quantity: changeQty });
+            if (response.hasErrors) {
+                throw new Error(response.errorDescription[0]);
+            }
+            return response;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
             queryClient.invalidateQueries({ queryKey: ['foods'] });
             toast('Cantidad actualizada');
+        },
+        onError: (error: Error) => {
+            toast("Error al guardar la transacción " + error.message)
         }
     })
 
