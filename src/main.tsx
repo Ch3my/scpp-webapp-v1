@@ -38,6 +38,20 @@ const RootComponent = () => {
   const location = useLocation();
   const showSidebar = isLoggedIn && location.pathname !== '/';
 
+  // Prefetch FoodScreen in the background after dashboard settles
+  React.useEffect(() => {
+    if (!isLoggedIn) return;
+    let cleanup: () => void;
+    if (typeof window.requestIdleCallback === "function") {
+      const id = window.requestIdleCallback(() => import("./screens/FoodScreen"));
+      cleanup = () => window.cancelIdleCallback(id);
+    } else {
+      const id = setTimeout(() => import("./screens/FoodScreen"), 1500);
+      cleanup = () => clearTimeout(id);
+    }
+    return cleanup;
+  }, [isLoggedIn]);
+
   return (
     <>
       {showSidebar && <AppSidebar />}
