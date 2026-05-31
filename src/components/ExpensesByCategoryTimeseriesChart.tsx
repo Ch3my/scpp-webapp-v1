@@ -125,22 +125,43 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
 
     if (isLoading) {
         return (
-            <Card className="py-4 sm:py-0">
-                <CardHeader>
-                    <CardTitle>Gastos por categoría</CardTitle>
-                    <CardDescription>{nMonths} meses</CardDescription>
+            <Card className="py-4 sm:py-0 w-full min-w-0 overflow-hidden">
+                <CardHeader className="flex flex-col border-b p-0! sm:flex-row sm:items-stretch justify-between min-w-0 w-full">
+                    <div className="flex flex-col justify-center gap-1 px-6 py-3 sm:py-0 shrink-0">
+                        <CardTitle>Gastos por categoría</CardTitle>
+                        <CardDescription>
+                            <ButtonGroup className="mt-1 mb-1">
+                                <Button
+                                    variant={nMonths === 13 ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setNMonths(13)}
+                                    className="h-6 px-2 text-xs"
+                                >
+                                    13M
+                                </Button>
+                                <Button
+                                    variant={nMonths === 9 ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => setNMonths(9)}
+                                    className="h-6 px-2 text-xs"
+                                >
+                                    9M
+                                </Button>
+                            </ButtonGroup>
+                        </CardDescription>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <Skeleton className="h-62.5 w-full" />
+                <CardContent className="px-2 sm:p-6">
+                    <Skeleton className="h-50 w-full" />
                 </CardContent>
             </Card>
         )
     }
 
     return (
-        <Card className="py-4 sm:py-0">
-            <CardHeader className="flex flex-col items-stretch border-b p-0! sm:flex-row">
-                <div className="flex flex-1 flex-col justify-center gap-1 px-6 pb-3 sm:pb-0">
+        <Card className="py-4 sm:py-0 w-full min-w-0 overflow-hidden">
+            <CardHeader className="flex flex-col border-b p-0! sm:flex-row sm:items-stretch justify-between min-w-0 w-full">
+                <div className="flex flex-col justify-center gap-1 px-6 py-3 sm:py-0 shrink-0">
                     <CardTitle className="flex items-center gap-2">
                         Gastos por categoría
                     </CardTitle>
@@ -165,25 +186,27 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                         </ButtonGroup>
                     </CardDescription>
                 </div>
-                <div className="flex overflow-x-auto">
-                    {filteredDatasets.map((dataset) => {
-                        const key = `category_${dataset.categoryId}`;
-                        return (
-                            <button
-                                key={key}
-                                data-active={activeChart === key}
-                                className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 border-t px-3 py-2 text-left even:border-l sm:border-t-0 sm:border-l sm:px-6 sm:py-4 shrink-0"
-                                onClick={() => setActiveChart(key)}
-                            >
-                                <span className="text-muted-foreground">
-                                    {chartConfig[key]?.label}
-                                </span>
-                                <span className="text-xl leading-none font-semibold">
-                                    {numeral(totals[key]).format("0,0")}
-                                </span>
-                            </button>
-                        )
-                    })}
+                <div className="flex-1 min-w-0 overflow-x-auto">
+                    <div className="flex flex-row shrink-0">
+                        {filteredDatasets.map((dataset) => {
+                            const key = `category_${dataset.categoryId}`;
+                            return (
+                                <button
+                                    key={key}
+                                    data-active={activeChart === key}
+                                    className="data-[active=true]:bg-muted/50 flex flex-col justify-center gap-1 border-t px-4 py-3 text-left sm:border-t-0 sm:border-l sm:px-6 sm:py-4 shrink-0 min-w-[130px]"
+                                    onClick={() => setActiveChart(key)}
+                                >
+                                    <span className="text-muted-foreground whitespace-nowrap block">
+                                        {chartConfig[key]?.label}
+                                    </span>
+                                    <span className="text-lg font-semibold tracking-tight whitespace-nowrap block">
+                                        {numeral(totals[key]).format("0,0")}
+                                    </span>
+                                </button>
+                            )
+                        })}
+                    </div>
                 </div>
             </CardHeader>
             <CardContent className="px-2 sm:p-6">
@@ -211,8 +234,8 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                         <YAxis
                             tickLine={false}
                             axisLine={false}
-                            tickMargin={50}
-                            tickFormatter={(value) => numeral(value).format("0,0")}
+                            tickMargin={30}
+                            tickFormatter={(value: any) => numeral(Number(value)).format("0,0")}
                         />
                         <ChartTooltip
                             cursor={false}
@@ -236,7 +259,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                 offset={12}
                                 className="fill-foreground"
                                 fontSize={14}
-                                formatter={(value: number) => numeral(value).format("0,0")}
+                                formatter={(value: any) => numeral(Number(value)).format("0,0")}
                             />
                         </Line>
                     </LineChart>
