@@ -1,13 +1,13 @@
-import React, { useRef, useEffect, useCallback, useState } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const ITEMS = [
     { label: 'Sin Cuotas', value: 0 },
     ...Array.from({ length: 11 }, (_, i) => ({ label: `${i + 2} Cuotas`, value: i + 2 })),
 ];
 
-const ITEM_H = 40;
-const VISIBLE = 3;
-const CONTAINER_H = ITEM_H * VISIBLE;
+// Horizontal pixels required to advance one step while dragging
+const DRAG_PER_STEP = 40;
 
 interface CuotasPickerProps {
     value: number;
@@ -15,123 +15,81 @@ interface CuotasPickerProps {
 }
 
 export const CuotasPicker: React.FC<CuotasPickerProps> = ({ value, onChange }) => {
-    const containerRef = useRef<HTMLDivElement>(null);
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const dragRef = useRef<{ startY: number; startScrollTop: number } | null>(null);
-    const [liveIndex, setLiveIndex] = useState(() => ITEMS.findIndex(i => i.value === value));
+    const indexOf = (v: number) => Math.max(0, ITEMS.findIndex(i => i.value === v));
+    const [displayIndex, setDisplayIndex] = useState(() => indexOf(value));
+
+    // All mutable drag state lives in a ref — no stale closures
+    const drag = useRef<{ startX: number; startIndex: number; currentIndex: number } | null>(null);
     const [isDragging, setIsDragging] = useState(false);
 
-    const scrollToIndex = useCallback((index: number, smooth = true) => {
-        containerRef.current?.scrollTo({
-            top: index * ITEM_H,
-            behavior: smooth ? 'smooth' : 'instant',
-        });
-    }, []);
-
     useEffect(() => {
-        const index = ITEMS.findIndex(i => i.value === value);
-        if (index !== -1) {
-            setLiveIndex(index);
-            scrollToIndex(index, false);
-        }
-    }, [value, scrollToIndex]);
+        if (!drag.current) setDisplayIndex(indexOf(value));
+    }, [value]);
 
-    const commitScroll = useCallback(() => {
-        if (!containerRef.current) return;
-        const final = Math.max(0, Math.min(Math.round(containerRef.current.scrollTop / ITEM_H), ITEMS.length - 1));
-        scrollToIndex(final);
-        onChange(ITEMS[final].value);
-    }, [onChange, scrollToIndex]);
-
-    const handleScroll = () => {
-        if (!containerRef.current) return;
-        const snapped = Math.max(0, Math.min(Math.round(containerRef.current.scrollTop / ITEM_H), ITEMS.length - 1));
-        setLiveIndex(snapped);
-
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(commitScroll, 80);
-    };
+    const goTo = useCallback((index: number) => {
+        const clamped = Math.max(0, Math.min(index, ITEMS.length - 1));
+        setDisplayIndex(clamped);
+        onChange(ITEMS[clamped].value);
+    }, [onChange]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (!containerRef.current) return;
         e.preventDefault();
-        dragRef.current = { startY: e.clientY, startScrollTop: containerRef.current.scrollTop };
+        drag.current = { startX: e.clientX, startIndex: displayIndex, currentIndex: displayIndex };
         setIsDragging(true);
     };
 
     useEffect(() => {
-        const onMouseMove = (e: MouseEvent) => {
-            if (!dragRef.current || !containerRef.current) return;
-            const delta = dragRef.current.startY - e.clientY;
-            containerRef.current.scrollTop = dragRef.current.startScrollTop + delta;
+        const onMove = (e: MouseEvent) => {
+            if (!drag.current) return;
+            // drag left → higher index (next), drag right → lower index (prev)
+            const steps = Math.round((drag.current.startX - e.clientX) / DRAG_PER_STEP);
+            const next = Math.max(0, Math.min(drag.current.startIndex + steps, ITEMS.length - 1));
+            drag.current.currentIndex = next;
+            setDisplayIndex(next);
         };
 
-        const onMouseUp = () => {
-            if (!dragRef.current) return;
-            dragRef.current = null;
+        const onUp = () => {
+            if (!drag.current) return;
+            onChange(ITEMS[drag.current.currentIndex].value);
+            drag.current = null;
             setIsDragging(false);
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-            commitScroll();
         };
 
-        window.addEventListener('mousemove', onMouseMove);
-        window.addEventListener('mouseup', onMouseUp);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
         return () => {
-            window.removeEventListener('mousemove', onMouseMove);
-            window.removeEventListener('mouseup', onMouseUp);
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
         };
-    }, [commitScroll]);
+    }, [onChange]);
 
     return (
-        <div className="relative rounded-md border overflow-hidden" style={{ height: CONTAINER_H }}>
-            {/* fade top */}
-            <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-10 bg-linear-to-b from-background to-transparent" />
-            {/* fade bottom */}
-            <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-10 bg-linear-to-t from-background to-transparent" />
-            {/* center highlight bar */}
-            <div
-                className="pointer-events-none absolute inset-x-0 z-0 bg-muted rounded-sm mx-1"
-                style={{ top: ITEM_H, height: ITEM_H }}
-            />
-            <div
-                ref={containerRef}
-                className="h-full overflow-y-scroll scrollbar-none [&::-webkit-scrollbar]:hidden"
-                style={{
-                    scrollSnapType: isDragging ? 'none' : 'y mandatory',
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                }}
-                onScroll={handleScroll}
-                onMouseDown={handleMouseDown}
+        <div
+            className="flex items-center h-10 border rounded-md overflow-hidden select-none"
+            style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+            onMouseDown={handleMouseDown}
+        >
+            <button
+                type="button"
+                className="h-full px-2 flex items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => goTo(displayIndex - 1)}
+                disabled={displayIndex === 0}
             >
-                {/* top spacer so first item can center */}
-                <div style={{ height: ITEM_H, flexShrink: 0 }} />
-                {ITEMS.map((item, index) => {
-                    const dist = Math.abs(index - liveIndex);
-                    return (
-                        <div
-                            key={item.value}
-                            className="flex items-center justify-center select-none transition-all duration-100"
-                            style={{
-                                height: ITEM_H,
-                                scrollSnapAlign: 'center',
-                                opacity: dist === 0 ? 1 : dist === 1 ? 0.5 : 0.2,
-                                fontWeight: dist === 0 ? 600 : 400,
-                                fontSize: dist === 0 ? '0.95rem' : '0.85rem',
-                            }}
-                            onClick={() => {
-                                if (!isDragging) {
-                                    scrollToIndex(index);
-                                    onChange(item.value);
-                                }
-                            }}
-                        >
-                            {item.label}
-                        </div>
-                    );
-                })}
-                {/* bottom spacer */}
-                <div style={{ height: ITEM_H, flexShrink: 0 }} />
+                <ChevronLeft className="h-4 w-4" />
+            </button>
+            <div className="flex-1 text-center text-sm font-medium">
+                {ITEMS[displayIndex]?.label}
             </div>
+            <button
+                type="button"
+                className="h-full px-2 flex items-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors disabled:opacity-30"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={() => goTo(displayIndex + 1)}
+                disabled={displayIndex === ITEMS.length - 1}
+            >
+                <ChevronRight className="h-4 w-4" />
+            </button>
         </div>
     );
 };
