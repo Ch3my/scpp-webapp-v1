@@ -29,6 +29,7 @@ import {
 
 import { NumberInput } from './NumberInput';
 import { ComboboxCategorias } from './ComboboxCategorias';
+import { CuotasPicker } from './CuotasPicker';
 import { Documento } from '@/models/Documento';
 
 interface DocRecordProps {
@@ -234,19 +235,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                         {!isEditMode && (
                             <>
                                 <Label>Cuotas</Label>
-                                <Select value={String(cuotas)} onValueChange={(e) => setCuotas(Number(e))}>
-                                    <SelectTrigger>
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectGroup>
-                                            <SelectItem value="0">Sin Cuotas</SelectItem>
-                                            {Array.from({ length: 11 }, (_, i) => i + 2).map(n => (
-                                                <SelectItem key={n} value={String(n)}>{n} Cuotas</SelectItem>
-                                            ))}
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                <CuotasPicker value={cuotas} onChange={setCuotas} />
                             </>
                         )}
                     </div>
