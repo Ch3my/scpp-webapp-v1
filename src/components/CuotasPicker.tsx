@@ -32,6 +32,24 @@ export const CuotasPicker: React.FC<CuotasPickerProps> = ({ value, onChange }) =
         onChange(ITEMS[clamped].value);
     }, [onChange]);
 
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            // Use functional update via ref to avoid stale closure
+            setDisplayIndex(prev => {
+                const next = Math.max(0, Math.min(prev + (e.deltaY > 0 ? 1 : -1), ITEMS.length - 1));
+                onChange(ITEMS[next].value);
+                return next;
+            });
+        };
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => el.removeEventListener('wheel', onWheel);
+    }, [onChange]);
+
     const handleMouseDown = (e: React.MouseEvent) => {
         e.preventDefault();
         drag.current = { startX: e.clientX, startIndex: displayIndex, currentIndex: displayIndex };
@@ -65,6 +83,7 @@ export const CuotasPicker: React.FC<CuotasPickerProps> = ({ value, onChange }) =
 
     return (
         <div
+            ref={containerRef}
             className="flex items-center h-10 border rounded-md overflow-hidden select-none"
             style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
             onMouseDown={handleMouseDown}
