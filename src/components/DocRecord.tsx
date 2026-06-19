@@ -51,6 +51,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
     const [tipoDoc, setTipoDoc] = useState<number>(1);
     const [categoria, setCategoria] = useState<number>(0);
+    const [cuotas, setCuotas] = useState<number>(0);
 
     const isEditMode = !!initialData;
 
@@ -84,6 +85,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setFecha(DateTime.now());
                 setTipoDoc(1);
                 setCategoria(0);
+                setCuotas(0);
             }
         }
     }, [isOpen, docData]);
@@ -115,6 +117,10 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
 
     const saveMutation = useMutation({
         mutationFn: async (payload: any) => {
+            if (Array.isArray(payload)) {
+                const results = await Promise.all(payload.map((p: any) => api.post("/documentos", p)));
+                return results.map(r => r.data);
+            }
             const method = isEditMode ? 'put' : 'post';
             const { data } = await api[method]("/documentos", payload);
             return data;
@@ -137,6 +143,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         }
         if (tipoDoc == 1 && !categoria) {
             toast('Debe seleccionar una categoria');
+            return;
+        }
+        if (!isEditMode && cuotas >= 2) {
+            const montoPorCuota = Math.round(monto / cuotas);
+            const payloads = Array.from({ length: cuotas }, (_, i) => ({
+                monto: montoPorCuota,
+                proposito: `${proposito} (${i + 1}/${cuotas})`,
+                fecha: fecha.plus({ days: 30 * i }).toFormat('yyyy-MM-dd'),
+                fk_tipoDoc: tipoDoc,
+                fk_categoria: tipoDoc == 1 ? categoria : null,
+            }));
+            saveMutation.mutate(payloads);
             return;
         }
         const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null } = {
@@ -213,6 +231,24 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                             onChange={setCategoria}
                             disabled={disableCategoria}
                         />
+                        {!isEditMode && (
+                            <>
+                                <Label>Cuotas</Label>
+                                <Select value={String(cuotas)} onValueChange={(e) => setCuotas(Number(e))}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="0">Sin Cuotas</SelectItem>
+                                            {Array.from({ length: 11 }, (_, i) => i + 2).map(n => (
+                                                <SelectItem key={n} value={String(n)}>{n} Cuotas</SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </>
+                        )}
                     </div>
                     <DialogFooter>
                         {isEditMode && (
