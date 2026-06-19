@@ -34,14 +34,19 @@ export const CuotasPicker: React.FC<CuotasPickerProps> = ({ value, onChange }) =
 
     const containerRef = useRef<HTMLDivElement>(null);
 
+    const wheelAccum = useRef(0);
+
     useEffect(() => {
         const el = containerRef.current;
         if (!el) return;
         const onWheel = (e: WheelEvent) => {
             e.preventDefault();
-            // Use functional update via ref to avoid stale closure
+            wheelAccum.current += e.deltaY;
+            if (Math.abs(wheelAccum.current) < 80) return;
+            const direction = wheelAccum.current > 0 ? 1 : -1;
+            wheelAccum.current = 0;
             setDisplayIndex(prev => {
-                const next = Math.max(0, Math.min(prev + (e.deltaY > 0 ? 1 : -1), ITEMS.length - 1));
+                const next = Math.max(0, Math.min(prev + direction, ITEMS.length - 1));
                 onChange(ITEMS[next].value);
                 return next;
             });
