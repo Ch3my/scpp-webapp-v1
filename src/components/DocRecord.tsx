@@ -18,6 +18,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from './ui/button';
+import { Kbd } from './ui/kbd';
 import {
     Dialog,
     DialogContent,
@@ -181,6 +182,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         }
     };
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                handleSave();
+            }
+        };
+        document.addEventListener('keydown', handler);
+        return () => document.removeEventListener('keydown', handler);
+    }, [isOpen, handleSave]);
+
     return (
         <>
             {!hideButton && (
@@ -249,6 +262,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                         <Button onClick={handleSave} disabled={deleteMutation.isPending || saveMutation.isPending}>
                             {saveMutation.isPending && <Loader2 className="animate-spin" />}
                             {isEditMode ? 'Actualizar' : 'Guardar'}
+                            <Kbd className="ml-1 border-current/30 bg-current/10 text-current opacity-60">Ctrl+S</Kbd>
                         </Button>
                     </DialogFooter>
                 </DialogContent>

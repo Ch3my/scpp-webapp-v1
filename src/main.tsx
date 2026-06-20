@@ -4,6 +4,7 @@ import App from "./App";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router";
 import { Toaster } from "./components/ui/sonner";
 import { SidebarProvider, } from "@/components/ui/sidebar"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { AppSidebar } from "@/components/app-sidebar"
 import { useAppState } from "./AppState";
 import Dashboard from "./screens/Dashboard";
@@ -90,8 +91,10 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <SidebarProvider defaultOpen={false}>
-          <Toaster position="bottom-center" />
-          <RootComponent />
+          <TooltipProvider>
+            <Toaster position="bottom-center" />
+            <RootComponent />
+          </TooltipProvider>
         </SidebarProvider>
       </BrowserRouter>
     </QueryClientProvider>
