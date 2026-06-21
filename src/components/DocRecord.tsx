@@ -262,7 +262,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                         <Button onClick={handleSave} disabled={deleteMutation.isPending || saveMutation.isPending}>
                             {saveMutation.isPending && <Loader2 className="animate-spin" />}
                             {isEditMode ? 'Actualizar' : 'Guardar'}
-                            <Kbd className="ml-1 border-current/30 bg-current/10 text-current opacity-60">Ctrl+S</Kbd>
+                            <Kbd className="ml-1.5 border-transparent bg-transparent text-current/35 text-[9px]">Ctrl+S</Kbd>
                         </Button>
                     </DialogFooter>
                 </DialogContent>
