@@ -18,7 +18,6 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from './ui/button';
-import { Kbd } from './ui/kbd';
 import {
     Dialog,
     DialogContent,
@@ -262,7 +261,6 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                         <Button onClick={handleSave} disabled={deleteMutation.isPending || saveMutation.isPending}>
                             {saveMutation.isPending && <Loader2 className="animate-spin" />}
                             {isEditMode ? 'Actualizar' : 'Guardar'}
-                            <Kbd className="ml-1.5 border-transparent bg-transparent text-current/35 text-[9px]">Ctrl+S</Kbd>
                         </Button>
                     </DialogFooter>
                 </DialogContent>
