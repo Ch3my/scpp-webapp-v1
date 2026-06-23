@@ -23,7 +23,7 @@ import { useEffect, useState } from "react"
 import { DatePicker } from "./DatePicker"
 import { DateTime } from "luxon";
 import { useAppState } from "@/AppState"
-import Resizer from "react-image-file-resizer";
+import { resizeImage } from "@/lib/resize-image";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
@@ -36,20 +36,9 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
   const [image, setImage] = useState<string>("");
   const { categorias } = useAppState();
 
-  const handleImageUpload = (file: File) => {
-    Resizer.imageFileResizer(
-      file,
-      1920,
-      1920,
-      "JPEG",
-      90,
-      0,
-      (uri) => {
-        setImage(uri as string)
-        return uri
-      },
-      "base64"
-    );
+  const handleImageUpload = async (file: File) => {
+    const uri = await resizeImage(file, 1920, 0.9);
+    setImage(uri);
   };
 
   const handleSubmit = async () => {
@@ -122,7 +111,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {
-                handleImageUpload(file)
+                await handleImageUpload(file)
               }
             }}
           />
