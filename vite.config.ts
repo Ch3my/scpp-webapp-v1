@@ -26,6 +26,9 @@ export default defineConfig(async () => ({
       },
     },
   },
+  optimizeDeps: {
+    include: ["react-image-file-resizer"],
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
