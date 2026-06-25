@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from "react"
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react"
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from "recharts"
 import { DateTime, Settings } from "luxon";
 import {
@@ -32,11 +32,23 @@ const chartConfig = {
 function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
     const [nMonths, setNMonths] = useState<number>(13);
     const [offset, setOffset] = useState<number>(0);
+    const [debouncedNMonths, setDebouncedNMonths] = useState<number>(13);
+    const [debouncedOffset, setDebouncedOffset] = useState<number>(0);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedNMonths(nMonths), 400);
+        return () => clearTimeout(timer);
+    }, [nMonths]);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setDebouncedOffset(offset), 400);
+        return () => clearTimeout(timer);
+    }, [offset]);
 
     const { data: monthlyGraphData, isLoading, refetch } = useQuery({
-        queryKey: ['dashboard', 'monthly-graph', nMonths, offset],
+        queryKey: ['dashboard', 'monthly-graph', debouncedNMonths, debouncedOffset],
         queryFn: async () => {
-            const { data } = await api.get(`/monthly-graph?nMonths=${nMonths}&offset=${offset}`);
+            const { data } = await api.get(`/monthly-graph?nMonths=${debouncedNMonths}&offset=${debouncedOffset}`);
             return data;
         },
     });
