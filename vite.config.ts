@@ -15,8 +15,7 @@ export default defineConfig(async () => ({
             if (id.includes('react-query') || id.includes('@tanstack/query')) return 'react-query';
             if (id.includes('react-router') || id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
             if (id.includes('@radix-ui')) return 'radix';
-            if (id.includes('react-image-file-resizer') ||
-                id.includes('react-day-picker') ||
+            if (id.includes('react-day-picker') ||
                 id.includes('numeral') ||
                 id.includes('luxon') ||
                 id.includes('zustand') ||
