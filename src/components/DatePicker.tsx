@@ -50,7 +50,7 @@ export const DatePicker: React.FC<DatePickerProps & { className?: string }> = ({
                     </Button>
                 </span>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0">
+            <PopoverContent className="w-auto p-0" side="bottom" align="center">
                 <Calendar
                     mode="single"
                     selected={selectedDate?.toJSDate()}
