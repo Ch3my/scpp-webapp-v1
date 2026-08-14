@@ -50,11 +50,18 @@ export const DatePicker: React.FC<DatePickerProps & { className?: string }> = ({
                     </Button>
                 </span>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" side="bottom" align="center">
+            <PopoverContent
+                className="w-auto p-0"
+                side="right"
+                align="center"
+                sideOffset={-40}
+            >
                 <Calendar
                     mode="single"
                     selected={selectedDate?.toJSDate()}
                     onSelect={handleSelect}
+                    captionLayout="dropdown"
+                    className="p-2 [--cell-size:1.8125rem]"
                 />
             </PopoverContent>
         </Popover>
