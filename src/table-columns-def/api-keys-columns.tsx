@@ -1,5 +1,6 @@
 import { ApiKey } from "@/models/ApiKey";
 import { ColumnDef } from "@tanstack/react-table";
+import { tableFeaturesConfig } from "@/lib/table-features";
 import { MoreHorizontal, Trash, Ban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +27,7 @@ function getStatus(key: ApiKey): ApiKeyStatus {
     return key.isActive ? 'active' : 'revoked';
 }
 
-export const columns: ColumnDef<ApiKey>[] = [
+export const columns: ColumnDef<typeof tableFeaturesConfig, ApiKey>[] = [
     {
         accessorKey: "name",
         header: "Name",

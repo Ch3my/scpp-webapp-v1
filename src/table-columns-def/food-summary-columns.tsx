@@ -1,6 +1,7 @@
 
 import { Food } from "@/models/Food"
 import { ColumnDef } from "@tanstack/react-table"
+import { tableFeaturesConfig } from "@/lib/table-features"
 import { MoreHorizontal, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import numeral from "numeral"
 
-export const columns: ColumnDef<Food>[] = [
+export const columns: ColumnDef<typeof tableFeaturesConfig, Food>[] = [
     {
         accessorKey: "name",
         header: ({ column }) => {

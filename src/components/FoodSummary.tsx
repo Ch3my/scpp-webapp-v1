@@ -2,11 +2,10 @@ import React from 'react';
 
 import {
     flexRender,
-    getCoreRowModel,
-    getSortedRowModel,
     SortingState,
-    useReactTable,
+    useTable,
 } from "@tanstack/react-table"
+import { tableFeaturesConfig } from "@/lib/table-features"
 import {
     Table,
     TableBody,
@@ -32,7 +31,7 @@ interface FoodSummaryProps {
 
 export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFilter, onViewDetail }: FoodSummaryProps) {
     const queryClient = useQueryClient();
-    const [sorting, setSorting] = React.useState<SortingState>([])
+    const [sorting, setSorting] = React.useState<SortingState>([{ id: 'name', desc: false }])
 
     const { data: foods = [], isLoading } = useQuery<Food[]>({
         queryKey: ['foods'],
@@ -71,12 +70,11 @@ export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFi
         [foods, foodItemIdFilter]
     );
 
-    const table = useReactTable({
+    const table = useTable({
+        features: tableFeaturesConfig,
         data: filteredFoods,
         columns,
-        getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
         state: {
             sorting,
         },

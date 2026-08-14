@@ -6,12 +6,10 @@ import { DateTime } from 'luxon';
 import {
     ColumnFiltersState,
     flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getSortedRowModel,
     SortingState,
-    useReactTable,
+    useTable,
 } from "@tanstack/react-table"
+import { tableFeaturesConfig } from "@/lib/table-features"
 import {
     Table,
     TableBody,
@@ -114,14 +112,12 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
         }
     })
 
-    const table = useReactTable({
+    const table = useTable({
+        features: tableFeaturesConfig,
         data: transactions,
         columns,
-        getCoreRowModel: getCoreRowModel(),
         onSortingChange: setSorting,
-        getSortedRowModel: getSortedRowModel(),
         onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(),
         state: {
             sorting,
             columnFilters,

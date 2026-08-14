@@ -8,9 +8,9 @@ import { ApiKey, ApiKeysListResponse } from '@/models/ApiKey';
 import api from '@/lib/api';
 import {
     flexRender,
-    getCoreRowModel,
-    useReactTable,
+    useTable,
 } from "@tanstack/react-table";
+import { tableFeaturesConfig } from "@/lib/table-features";
 import {
     Table,
     TableBody,
@@ -35,10 +35,10 @@ const ApiKeys = () => {
         }
     });
 
-    const table = useReactTable({
+    const table = useTable({
+        features: tableFeaturesConfig,
         data: apiKeys,
         columns,
-        getCoreRowModel: getCoreRowModel(),
         meta: {
             revokeApiKey: (key: ApiKey) => setKeyToRevoke(key),
             deleteApiKey: (key: ApiKey) => setKeyToDelete(key),

@@ -1,5 +1,6 @@
 import { FoodTransaction } from "@/models/FoodTransaction"
 import { ColumnDef } from "@tanstack/react-table"
+import { tableFeaturesConfig } from "@/lib/table-features"
 import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine, CircleMinus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -41,7 +42,7 @@ const calculateIcon = (bestBefore: DateTime | null) => {
     }
 }
 
-export const columns: ColumnDef<FoodTransaction>[] = [
+export const columns: ColumnDef<typeof tableFeaturesConfig, FoodTransaction>[] = [
     {
         accessorKey: "bestBefore",
         size: 90,
@@ -65,7 +66,7 @@ export const columns: ColumnDef<FoodTransaction>[] = [
         cell: ({ row }) => {
             return row.original.bestBefore?.toFormat("dd-MM-yyyy");
         },
-        sortingFn: (rowA, rowB, _) => {
+        sortFn: (rowA, rowB, _) => {
             const dateA = rowA.original.bestBefore;
             const dateB = rowB.original.bestBefore;
             if (!dateA) return -1;
