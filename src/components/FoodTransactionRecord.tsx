@@ -228,8 +228,11 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
                             disabled={accion !== "restock"}
                             value={codigo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCodigo(e.target.value.toUpperCase())} />
                         {!isEditMode && accion === "restock" && codigoSugerido && (
-                            <Badge variant="secondary" className="cursor-pointer"
-                                title="Usar codigo sugerido"
+                            <Badge variant="outline"
+                                className={codigo === codigoSugerido
+                                    ? "opacity-50 text-muted-foreground cursor-default"
+                                    : "bg-orange-500 dark:bg-orange-900 cursor-pointer"}
+                                title={codigo === codigoSugerido ? "Codigo sugerido aplicado" : "Usar codigo sugerido"}
                                 onClick={() => setCodigo(codigoSugerido)}>
                                 {codigoSugerido}
                             </Badge>
