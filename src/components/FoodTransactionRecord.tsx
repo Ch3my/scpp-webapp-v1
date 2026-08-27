@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { CirclePlus, Loader2 } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { DateTime } from "luxon";
 import { toast } from "sonner";
 import { DatePickerInput } from "./DatePickerInput";
@@ -20,6 +20,7 @@ import { ComboboxAlimentos } from "./ComboboxAlimentos";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FoodTransaction } from "@/models/FoodTransaction";
+import { Badge } from "@/components/ui/badge";
 import api from "@/lib/api";
 
 interface Props {
@@ -69,6 +70,32 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
 
     // Use fresh data if available, otherwise use initialData
     const transactionData = freshData ?? initialData;
+
+    // Codigos ya usados, para sugerir el menor numero disponible al crear
+    const { data: codigosUsados = [] } = useQuery<string[]>({
+        queryKey: ['transactions', 'codes'],
+        queryFn: async () => {
+            const { data } = await api.get('/food/transaction?page=1');
+            return (data as any[])
+                .map((item) => (item.code ?? "").toString().trim())
+                .filter((code: string) => code !== "");
+        },
+        enabled: isOpen && !isEditMode,
+    });
+
+    const codigoSugerido = useMemo(() => {
+        // Si algun codigo tiene letras no se puede sugerir un numero
+        if (codigosUsados.some((code) => !/^\d+$/.test(code))) {
+            return null;
+        }
+        const usados = new Set(codigosUsados.map(Number));
+        let sugerencia = 1;
+        while (usados.has(sugerencia)) {
+            sugerencia++;
+        }
+        // El input acepta maximo 3 caracteres
+        return sugerencia <= 999 ? String(sugerencia) : null;
+    }, [codigosUsados]);
 
     useEffect(() => {
         if (isOpen) {
@@ -196,9 +223,18 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
                     <Label htmlFor="codigo">
                         Código
                     </Label>
-                    <Input id="codigo" maxLength={3} autoComplete="off"
-                        disabled={accion !== "restock"}
-                        value={codigo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCodigo(e.target.value.toUpperCase())} />
+                    <div className="flex items-center gap-2">
+                        <Input id="codigo" maxLength={3} autoComplete="off"
+                            disabled={accion !== "restock"}
+                            value={codigo} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCodigo(e.target.value.toUpperCase())} />
+                        {!isEditMode && accion === "restock" && codigoSugerido && (
+                            <Badge variant="secondary" className="cursor-pointer"
+                                title="Usar codigo sugerido"
+                                onClick={() => setCodigo(codigoSugerido)}>
+                                {codigoSugerido}
+                            </Badge>
+                        )}
+                    </div>
                     <Label htmlFor="notas">
                         Vencimiento
                     </Label>
