@@ -35,12 +35,14 @@ export function ComboboxCategorias({ value, onChange, disabled }: ComboboxCatego
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between font-normal"
+          className="justify-between overflow-hidden font-normal"
           disabled={disabled}
         >
-          {value
-            ? categorias.find((categoria) => categoria.id === value)?.descripcion
-            : <>&nbsp;</>}
+          <span className="truncate">
+            {value
+              ? categorias.find((categoria) => categoria.id === value)?.descripcion
+              : <>&nbsp;</>}
+          </span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>

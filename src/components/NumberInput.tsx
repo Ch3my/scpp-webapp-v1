@@ -15,6 +15,8 @@ interface NumberInputProps {
   thousandsSeparator?: string
   /** Character used as the decimal separator, e.g. "," or "." */
   decimalSeparator?: string
+  /** Extra classes merged onto the underlying input */
+  className?: string
 }
 
 /**
@@ -31,6 +33,7 @@ export function NumberInput({
   decimalPlaces = 2,
   thousandsSeparator = ",",
   decimalSeparator = ".",
+  className,
 }: NumberInputProps) {
   const [displayValue, setDisplayValue] = React.useState("")
 
@@ -166,6 +169,7 @@ export function NumberInput({
       value={displayValue}
       onKeyDown={handleKeyDown}
       onChange={handleChange}
+      className={className}
     />
   )
 }

@@ -62,14 +62,16 @@ export function ComboboxProyectos({ value, onChange, disabled }: ComboboxProyect
           role="combobox"
           aria-expanded={open}
           className={cn(
-            "justify-between font-normal",
+            "justify-between overflow-hidden font-normal",
             selected && !selected.activo && "text-muted-foreground"
           )}
           disabled={disabled}
         >
-          {selected
-            ? `${selected.nombre}${selected.activo ? '' : ' (inactivo)'}`
-            : <>&nbsp;</>}
+          <span className="truncate">
+            {selected
+              ? `${selected.nombre}${selected.activo ? '' : ' (inactivo)'}`
+              : <>&nbsp;</>}
+          </span>
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>

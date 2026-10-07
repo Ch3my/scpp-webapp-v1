@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
-import { CirclePlus, Loader2 } from "lucide-react"
+import { CirclePlus, Loader2, Tags, Trash2 } from "lucide-react"
 import { Input } from './ui/input';
 import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
+import numeral from 'numeral';
 import { useAppState } from "@/AppState"
 import { toast } from "sonner"
 import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
 import api from "@/lib/api";
+import { cn } from '@/lib/utils';
 
 import {
     Select,
@@ -18,6 +20,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Button } from './ui/button';
+import { Kbd } from './ui/kbd';
 import {
     Dialog,
     DialogContent,
@@ -33,6 +36,15 @@ import { ComboboxProyectos } from './ComboboxProyectos';
 import { CuotasPicker } from './CuotasPicker';
 import { Documento } from '@/models/Documento';
 
+/** Only this tipoDoc carries a categoria and a proyecto. */
+const TIPO_DOC_GASTO = 1;
+
+/** Past this many tipos the segmented control gets cramped, so fall back to a Select. */
+const MAX_SEGMENTED_TIPOS = 4;
+
+/** Days the save path puts between consecutive cuotas. */
+const DIAS_POR_CUOTA = 30;
+
 interface DocRecordProps {
     hideButton?: boolean;
     onOpenChange?: (isOpen: boolean) => void;
@@ -43,7 +55,6 @@ interface DocRecordProps {
 
 const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange, isOpen: controlledIsOpen, initialData }) => {
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
-    const [disableCategoria, setDisableCategoria] = useState<boolean>(false);
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
     const { tipoDocs } = useAppState()
@@ -51,12 +62,14 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
-    const [tipoDoc, setTipoDoc] = useState<number>(1);
+    const [tipoDoc, setTipoDoc] = useState<number>(TIPO_DOC_GASTO);
     const [categoria, setCategoria] = useState<number>(0);
     const [proyecto, setProyecto] = useState<number>(0);
     const [cuotas, setCuotas] = useState<number>(0);
 
     const isEditMode = !!initialData;
+    const isGasto = tipoDoc === TIPO_DOC_GASTO;
+    const splitEnCuotas = !isEditMode && cuotas >= 2;
 
     // Fetch fresh data in background to ensure we have latest version
     const { data: freshData } = useQuery<Documento>({
@@ -82,12 +95,13 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(docData.fk_tipoDoc);
                 setCategoria(docData.fk_categoria ?? 0);
                 setProyecto(docData.fk_proyecto ?? 0);
+                setCuotas(0);
             } else {
                 // New document mode: reset to defaults
                 setMonto(0);
                 setProposito('');
                 setFecha(DateTime.now());
-                setTipoDoc(1);
+                setTipoDoc(TIPO_DOC_GASTO);
                 setCategoria(0);
                 setProyecto(0);
                 setCuotas(0);
@@ -95,14 +109,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         }
     }, [isOpen, docData]);
 
-    useEffect(() => {
-        if (tipoDoc == 1) {
-            setDisableCategoria(false)
-        } else {
-            setDisableCategoria(true)
-            setCategoria(0)
-        }
-    }, [tipoDoc])
+    // Categoria and proyecto are deliberately NOT cleared when the tipo stops being
+    // a gasto: the panel only unmounts, so toggling the tipo away and back brings the
+    // original classification with it. handleSave already sends null for other tipos.
 
     const deleteMutation = useMutation({
         mutationFn: async () => {
@@ -154,19 +163,23 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             toast('Debe seleccionar un tipo de documento');
             return;
         }
-        if (tipoDoc == 1 && !categoria) {
+        if (!Number.isFinite(monto)) {
+            toast('Debe ingresar un monto');
+            return;
+        }
+        if (isGasto && !categoria) {
             toast('Debe seleccionar una categoria');
             return;
         }
-        if (!isEditMode && cuotas >= 2) {
+        if (splitEnCuotas) {
             const montoPorCuota = Math.round(monto / cuotas);
             const payloads = Array.from({ length: cuotas }, (_, i) => ({
                 monto: montoPorCuota,
                 proposito: `${proposito} (${i + 1}/${cuotas})`,
-                fecha: fecha.plus({ days: 30 * i }).toFormat('yyyy-MM-dd'),
+                fecha: fecha.plus({ days: DIAS_POR_CUOTA * i }).toFormat('yyyy-MM-dd'),
                 fk_tipoDoc: tipoDoc,
-                fk_categoria: tipoDoc == 1 ? categoria : null,
-                fk_proyecto: proyecto > 0 ? proyecto : null,
+                fk_categoria: isGasto ? categoria : null,
+                fk_proyecto: isGasto && proyecto > 0 ? proyecto : null,
             }));
             saveMutation.mutate(payloads);
             return;
@@ -176,8 +189,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             proposito,
             fecha: fecha.toFormat('yyyy-MM-dd'),
             fk_tipoDoc: tipoDoc,
-            fk_categoria: tipoDoc == 1 ? categoria : null,
-            fk_proyecto: proyecto > 0 ? proyecto : null
+            fk_categoria: isGasto ? categoria : null,
+            fk_proyecto: isGasto && proyecto > 0 ? proyecto : null
         };
         if (isEditMode) {
             payload.id = initialData!.id;
@@ -207,6 +220,17 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         return () => document.removeEventListener('keydown', handler);
     }, [isOpen, handleSave]);
 
+    const isPending = deleteMutation.isPending || saveMutation.isPending;
+
+    // Mirrors what handleSave would post, so the split is visible before committing to it
+    const cuotasPreview = splitEnCuotas && Number.isFinite(monto)
+        ? {
+            montoPorCuota: numeral(Math.round(monto / cuotas)).format('0,0'),
+            desde: fecha.toFormat('LLL yyyy'),
+            hasta: fecha.plus({ days: DIAS_POR_CUOTA * (cuotas - 1) }).toFormat('LLL yyyy'),
+        }
+        : null;
+
     return (
         <>
             {!hideButton && (
@@ -215,72 +239,163 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 </Button>
             )}
             <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
+                <DialogContent className="gap-3 p-5 sm:max-w-lg">
+                    <DialogHeader className="gap-0">
                         <DialogTitle>{isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
-                        <DialogDescription>
+                        <DialogDescription className="sr-only">
                             {/* To avoid anoying warning */}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 items-center" style={{ gridTemplateColumns: '1fr 3fr' }}>
-                        <Label>Monto</Label>
-                        <NumberInput value={monto} onChange={setMonto} decimalPlaces={0} />
-                        <Label>Proposito</Label>
-                        <Input
-                            value={proposito}
-                            onChange={(e) => setProposito(e.target.value)}
-                        />
-                        <Label>Fecha</Label>
-                        <DatePicker
-                            value={fecha}
-                            onChange={(e) => e && setFecha(e)}
-                        />
-                        <Label>Tipo Doc</Label>
-                        <Select value={String(tipoDoc)} onValueChange={(e) => {
-                            setTipoDoc(Number(e))
-                        }}>
-                            <SelectTrigger>
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectGroup>
+
+                    <div className="grid gap-3">
+                        {/* Tipo decides which fields exist below it, so it leads the form */}
+                        <div className="grid gap-1.5">
+                            <Label className="text-xs tracking-wide text-muted-foreground uppercase">Tipo de documento</Label>
+                            {tipoDocs.length > 0 && tipoDocs.length <= MAX_SEGMENTED_TIPOS ? (
+                                <div
+                                    className="grid gap-1 rounded-lg bg-muted p-1"
+                                    style={{ gridTemplateColumns: `repeat(${tipoDocs.length}, minmax(0, 1fr))` }}
+                                >
                                     {tipoDocs.map((tipo) => (
-                                        <SelectItem key={tipo.id} value={String(tipo.id)}>
+                                        <button
+                                            key={tipo.id}
+                                            type="button"
+                                            onClick={() => setTipoDoc(Number(tipo.id))}
+                                            aria-pressed={tipoDoc === Number(tipo.id)}
+                                            className={cn(
+                                                "truncate rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                                                tipoDoc === Number(tipo.id)
+                                                    ? "bg-background text-foreground shadow-sm"
+                                                    : "text-muted-foreground hover:text-foreground"
+                                            )}
+                                        >
                                             {tipo.descripcion}
-                                        </SelectItem>
+                                        </button>
                                     ))}
-                                </SelectGroup>
-                            </SelectContent>
-                        </Select>
-                        <Label>Categoria</Label>
-                        <ComboboxCategorias
-                            value={categoria}
-                            onChange={setCategoria}
-                            disabled={disableCategoria}
-                        />
-                        <Label>Proyecto</Label>
-                        <ComboboxProyectos
-                            value={proyecto}
-                            onChange={setProyecto}
-                        />
-                        {!isEditMode && (
-                            <>
-                                <Label>Cuotas</Label>
-                                <CuotasPicker value={cuotas} onChange={setCuotas} />
-                            </>
+                                </div>
+                            ) : (
+                                <Select value={String(tipoDoc)} onValueChange={(e) => setTipoDoc(Number(e))}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            {tipoDocs.map((tipo) => (
+                                                <SelectItem key={tipo.id} value={String(tipo.id)}>
+                                                    {tipo.descripcion}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+
+                        <div className="grid gap-1.5">
+                            <Label>Monto</Label>
+                            <div className="relative">
+                                <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">$</span>
+                                <NumberInput
+                                    value={monto}
+                                    onChange={setMonto}
+                                    decimalPlaces={0}
+                                    className="pl-7 tabular-nums"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid gap-1.5">
+                            <Label>Proposito</Label>
+                            <Input
+                                value={proposito}
+                                autoComplete="off"
+                                onChange={(e) => setProposito(e.target.value)}
+                            />
+                        </div>
+
+                        <div className={cn("grid gap-3", !isEditMode && "sm:grid-cols-2")}>
+                            <div className="grid gap-1.5">
+                                <Label>Fecha</Label>
+                                <DatePicker
+                                    value={fecha}
+                                    onChange={(e) => e && setFecha(e)}
+                                />
+                            </div>
+                            {!isEditMode && (
+                                <div className="grid gap-1.5">
+                                    <Label>Cuotas</Label>
+                                    <CuotasPicker value={cuotas} onChange={setCuotas} />
+                                </div>
+                            )}
+                        </div>
+
+                        {cuotasPreview && (
+                            <p className="-mt-1 text-xs text-muted-foreground">
+                                Se crearan <span className="font-medium text-foreground">{cuotas} documentos</span> de{' '}
+                                <span className="font-medium text-foreground">${cuotasPreview.montoPorCuota}</span>{' '}
+                                cada uno, entre {cuotasPreview.desde} y {cuotasPreview.hasta}.
+                            </p>
+                        )}
+
+                        {/* Categoria and proyecto exist for gastos only */}
+                        {isGasto && (
+                            <div className="grid gap-2 rounded-lg border bg-muted/30 px-3 py-2.5">
+                                <div className="flex items-center gap-2 text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                                    <Tags className="size-3.5" />
+                                    Clasificacion del gasto
+                                </div>
+                                <div className="grid gap-2.5 sm:grid-cols-2">
+                                    <div className="grid gap-1.5">
+                                        <Label>
+                                            Categoria <span className="text-destructive">*</span>
+                                        </Label>
+                                        <ComboboxCategorias
+                                            value={categoria}
+                                            onChange={setCategoria}
+                                        />
+                                    </div>
+                                    <div className="grid gap-1.5">
+                                        <Label>
+                                            Proyecto <span className="font-normal text-muted-foreground">(opcional)</span>
+                                        </Label>
+                                        <ComboboxProyectos
+                                            value={proyecto}
+                                            onChange={setProyecto}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
                         )}
                     </div>
+
                     <DialogFooter>
-                        {isEditMode && (
-                            <Button variant="destructive" onClick={() => deleteMutation.mutate()} disabled={deleteMutation.isPending || saveMutation.isPending}>
-                                {deleteMutation.isPending && <Loader2 className="animate-spin" />}
-                                Eliminar
-                            </Button>
-                        )}
-                        <Button onClick={handleSave} disabled={deleteMutation.isPending || saveMutation.isPending}>
-                            {saveMutation.isPending && <Loader2 className="animate-spin" />}
-                            {isEditMode ? 'Actualizar' : 'Guardar'}
-                        </Button>
+                        <div className="flex flex-col gap-1.5 sm:items-end">
+                            <div className="flex w-full items-center justify-end gap-2">
+                                {isEditMode && (
+                                    <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        aria-label="Eliminar"
+                                        title="Eliminar"
+                                        onClick={() => deleteMutation.mutate()}
+                                        disabled={isPending}
+                                    >
+                                        {deleteMutation.isPending
+                                            ? <Loader2 className="animate-spin" />
+                                            : <Trash2 />}
+                                    </Button>
+                                )}
+                                <Button className="flex-1 sm:flex-none" onClick={handleSave} disabled={isPending}>
+                                    {saveMutation.isPending && <Loader2 className="animate-spin" />}
+                                    {isEditMode ? 'Actualizar' : 'Guardar'}
+                                </Button>
+                            </div>
+                            <span className="hidden items-center gap-1 text-xs text-muted-foreground sm:flex">
+                                <Kbd>Ctrl</Kbd>
+                                <Kbd>S</Kbd>
+                                para guardar
+                            </span>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
