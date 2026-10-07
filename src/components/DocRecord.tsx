@@ -29,6 +29,7 @@ import {
 
 import { NumberInput } from './NumberInput';
 import { ComboboxCategorias } from './ComboboxCategorias';
+import { ComboboxProyectos } from './ComboboxProyectos';
 import { CuotasPicker } from './CuotasPicker';
 import { Documento } from '@/models/Documento';
 
@@ -52,6 +53,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
     const [tipoDoc, setTipoDoc] = useState<number>(1);
     const [categoria, setCategoria] = useState<number>(0);
+    const [proyecto, setProyecto] = useState<number>(0);
     const [cuotas, setCuotas] = useState<number>(0);
 
     const isEditMode = !!initialData;
@@ -79,6 +81,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setFecha(DateTime.fromFormat(docData.fecha, "yyyy-MM-dd"));
                 setTipoDoc(docData.fk_tipoDoc);
                 setCategoria(docData.fk_categoria ?? 0);
+                setProyecto(docData.fk_proyecto ?? 0);
             } else {
                 // New document mode: reset to defaults
                 setMonto(0);
@@ -86,6 +89,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setFecha(DateTime.now());
                 setTipoDoc(1);
                 setCategoria(0);
+                setProyecto(0);
                 setCuotas(0);
             }
         }
@@ -108,6 +112,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            // initialDate/finalDate are derived from the linked gastos
+            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
+            queryClient.invalidateQueries({ queryKey: ['proyectoDocs'] });
             handleDialogChange(false);
             toast('Documento Eliminado');
         },
@@ -129,6 +136,11 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['docs'] });
             queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+            // initialDate/finalDate are derived from the linked gastos. The bare
+            // 'proyectoDocs' prefix covers both the pane the gasto left and the one
+            // it joined, so a reassignment needs no tracking of the previous value.
+            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
+            queryClient.invalidateQueries({ queryKey: ['proyectoDocs'] });
             handleDialogChange(false);
             toast(isEditMode ? 'Documento Actualizado' : 'Documento Agregado');
         },
@@ -154,16 +166,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 fecha: fecha.plus({ days: 30 * i }).toFormat('yyyy-MM-dd'),
                 fk_tipoDoc: tipoDoc,
                 fk_categoria: tipoDoc == 1 ? categoria : null,
+                fk_proyecto: proyecto > 0 ? proyecto : null,
             }));
             saveMutation.mutate(payloads);
             return;
         }
-        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null } = {
+        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; fk_proyecto: number | null } = {
             monto,
             proposito,
             fecha: fecha.toFormat('yyyy-MM-dd'),
             fk_tipoDoc: tipoDoc,
-            fk_categoria: tipoDoc == 1 ? categoria : null
+            fk_categoria: tipoDoc == 1 ? categoria : null,
+            fk_proyecto: proyecto > 0 ? proyecto : null
         };
         if (isEditMode) {
             payload.id = initialData!.id;
@@ -243,6 +257,11 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                             value={categoria}
                             onChange={setCategoria}
                             disabled={disableCategoria}
+                        />
+                        <Label>Proyecto</Label>
+                        <ComboboxProyectos
+                            value={proyecto}
+                            onChange={setProyecto}
                         />
                         {!isEditMode && (
                             <>
