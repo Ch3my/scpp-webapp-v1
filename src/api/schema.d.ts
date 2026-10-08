@@ -1407,7 +1407,7 @@ export interface components {
                 id: number;
                 /**
                  * @description The full API key. This is shown only once - store it securely!
-                 * @example sk_live_7KmBx9Q3FvL2nPwR8JhY4tUcXz1aMeNs
+                 * @example sk_live_EXAMPLEKEYDONOTUSExxxxxxxxxxxxxx
                  */
                 key: string;
                 keyPrefix: string;
@@ -1437,7 +1437,7 @@ export interface components {
         };
         ApiKeyResponse: {
             id: number;
-            /** @example sk_live_7KmB */
+            /** @example sk_live_EXAM */
             keyPrefix: string;
             name: string;
             rateLimit: number;
