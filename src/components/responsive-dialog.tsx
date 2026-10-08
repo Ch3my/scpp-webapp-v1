@@ -13,6 +13,7 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+import { useKeyboardInset } from "@/hooks/use-keyboard-inset"
 import { useLayoutMode } from "@/shell/useLayoutMode"
 
 /**
@@ -34,12 +35,26 @@ function BottomSheetContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
     showCloseButton?: boolean
 }) {
+    const keyboardInset = useKeyboardInset()
+    const contentRef = React.useRef<HTMLDivElement>(null)
+
+    // The sheet lifting is not enough on a tall form: the field you tapped can
+    // end up above the fold of the sheet's own scroll area once it shrinks.
+    React.useEffect(() => {
+        if (keyboardInset === 0) return
+        const focused = document.activeElement
+        if (focused instanceof HTMLElement && contentRef.current?.contains(focused)) {
+            focused.scrollIntoView({ block: "center", behavior: "smooth" })
+        }
+    }, [keyboardInset])
+
     return (
         <DialogPrimitive.Portal>
             <DialogPrimitive.Overlay
                 className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50"
             />
             <DialogPrimitive.Content
+                ref={contentRef}
                 data-slot="dialog-content"
                 className={cn(
                     "bg-background fixed inset-x-0 bottom-0 z-50 flex w-full flex-col gap-4 rounded-t-xl border-t p-4 shadow-lg",
@@ -52,7 +67,18 @@ function BottomSheetContent({
                     // sheet when the mobile layout is forced on a wide screen.
                     "sm:max-w-none"
                 )}
-                style={{ paddingBottom: "calc(1rem + var(--safe-area-bottom))" }}
+                style={{
+                    // Sits on top of the keyboard instead of behind it, and gives
+                    // back the height the keyboard took so the sheet still scrolls.
+                    bottom: keyboardInset || undefined,
+                    maxHeight: keyboardInset
+                        ? `calc(100dvh - ${keyboardInset}px - 1rem)`
+                        : undefined,
+                    // The home-bar inset is irrelevant while the keyboard covers it
+                    paddingBottom: keyboardInset
+                        ? "1rem"
+                        : "calc(1rem + var(--safe-area-bottom))",
+                }}
                 {...props}
             >
                 {children}

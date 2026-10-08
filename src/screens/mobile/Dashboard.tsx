@@ -340,12 +340,14 @@ const MobileDashboard = () => {
                                           * made rows hard to tell apart. Uppercase, tracked
                                           * and muted marks it as a heading, not content.
                                           */}
-                                        <div className="flex items-baseline justify-between gap-3 px-1 pb-1.5">
+                                        <div className="flex items-baseline justify-center gap-3 px-1 pb-1.5">
                                             <h2 className="text-muted-foreground text-base font-semibold tracking-wide uppercase">
                                                 {formatFecha(group.fecha)}
                                             </h2>
                                             {group.items.length > 1 && (
-                                                <span className="text-muted-foreground text-base font-semibold tabular-nums">
+                                                /* Same size and weight as a row's monto, so the
+                                                   day total reads as the sum of the amounts below */
+                                                <span className="text-muted-foreground text-lg font-bold tabular-nums">
                                                     {numeral(group.total).format('0,0')}
                                                 </span>
                                             )}

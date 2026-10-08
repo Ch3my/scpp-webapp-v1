@@ -30,7 +30,7 @@ export function MobileShell() {
     return (
         <div className="fixed inset-0 flex flex-col">
             <header
-                className="flex shrink-0 items-center gap-2 border-b bg-background px-4 py-3"
+                className="flex shrink-0 items-center justify-center gap-2 border-b bg-background px-4 py-3"
                 style={{ paddingTop: "calc(0.75rem + var(--safe-area-top))" }}
             >
                 <h1 className="truncate text-base font-semibold">
