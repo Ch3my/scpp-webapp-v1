@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { NewAsset } from '@/components/NewAsset';
+import AssetImgViewer from '@/components/AssetImgViewer';
 import {
     DataCardHeader,
     DataCardMeta,
@@ -57,7 +58,7 @@ const MobileAssets = () => {
 
     if (selectedId !== null) {
         return (
-            <div className="flex min-h-full flex-col">
+            <div className="flex h-full flex-col">
                 <div className="flex items-center gap-2 p-2">
                     <Button variant="ghost" onClick={close} className="min-h-11">
                         <ArrowLeft className="mr-1 size-4" />
@@ -70,20 +71,14 @@ const MobileAssets = () => {
                 ) : selectedAsset?.assetData ? (
                     <>
                         {/*
-                          * AssetImgViewer is mouse-only (wheel zoom, mousedown drag),
-                          * so mobile hands zooming to the browser instead: the image
-                          * sits at natural width in a scroll container with
-                          * touch-action pinch-zoom.
+                          * AssetImgViewer owns pinch, drag and double-tap from
+                          * pointer events, so the browser stays out of it. It is
+                          * sized by the flex row rather than by its content -
+                          * min-h-0 lets it shrink, and nothing inside scrolls, so
+                          * the shell keeps its single scroll container.
                           */}
-                        <div
-                            className="flex-1 overflow-auto px-3"
-                            style={{ touchAction: 'pinch-zoom' }}
-                        >
-                            <img
-                                src={selectedAsset.assetData}
-                                alt={selectedAsset.descripcion}
-                                className="mx-auto h-auto max-w-full rounded-lg"
-                            />
+                        <div className="min-h-0 flex-1 px-3">
+                            <AssetImgViewer base64Img={selectedAsset.assetData} />
                         </div>
                         <div className="p-3">
                             <p className="font-medium">{selectedAsset.descripcion}</p>

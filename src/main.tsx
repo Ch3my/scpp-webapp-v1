@@ -16,6 +16,7 @@ import { Shell } from "./shell/Shell";
 import { responsiveScreen } from "./shell/responsive-screen";
 import { queryClient } from "./api/queryClient";
 import { setUnauthorizedHandler } from "./api/client";
+import { disablePageZoom } from "./lib/disable-page-zoom";
 
 // Dashboard is eager - 90% of users auto-navigate to it from App.tsx
 // Lazy load other screens
@@ -41,6 +42,8 @@ const AssetsScreen = responsiveScreen(Assets, MobileAssets);
 const FoodRoute = responsiveScreen(FoodScreen, MobileFoodScreen);
 const ProyectosScreen = responsiveScreen(Proyectos, MobileProyectos);
 const ApiKeysScreen = responsiveScreen(ApiKeys, MobileApiKeys);
+
+disablePageZoom();
 
 // Keeps the api client free of any routing import
 setUnauthorizedHandler(() => {

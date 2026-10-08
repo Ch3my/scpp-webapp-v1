@@ -146,6 +146,27 @@ desktop density is untouched. This is the standard move for shared components.
 **Safe areas**: `--safe-area-top/bottom/left/right` are defined in `Custom.css`. Apply the bottom
 inset as *padding* on a bar so its background still reaches the screen edge.
 
+**Browser zoom is off app-wide; only the image viewer zooms.** Three things enforce it because no
+one of them covers every browser: `maximum-scale=1, user-scalable=no` on the viewport meta
+(`index.html`), `html { touch-action: pan-x pan-y }` (`Custom.css`), and
+`disablePageZoom()` from `src/lib/disable-page-zoom.ts`, called in `main.tsx`, for iOS Safari —
+which ignores the meta and needs its non-standard `gesture*` events plus multi-touch `touchmove`
+cancelled. Only `touchmove` is cancelled, never `touchstart`: cancelling `touchstart` suppresses
+the pointer events the viewer runs on.
+
+`AssetImgViewer` is the one place that zooms. It does **not** opt out of the above — it sets
+`touch-action: none` and implements pinch, drag, double-tap, wheel and double-click itself from
+pointer events, so mouse and touch share one code path. The image is laid out fitted and centred
+(`absolute inset-0 m-auto` + `max-w/h-full`) with zoom as a transform on top, so scale 1 always
+means "whole image visible"; `transform-origin` must stay at its default centre, because the
+gesture maths works in container-centre-relative coordinates. Translation is clamped so the image
+cannot be flung off screen. Give it a parent with a definite height (`min-h-0 flex-1`), not
+content-sized.
+
+**Android hides the Camera entry from a file picker whose `accept` is only `image/*`.** `NewAsset`
+uses `accept="image/*,text/plain"` to get the full chooser back, and so has to reject non-images
+in the change handler.
+
 **Scoped `:has()` only.** `has-[button:active]` matches *any* descendant button — on a card with a
 row menu that flashes the whole card. Target a marker instead:
 `has-[[data-card-body]:active]`.

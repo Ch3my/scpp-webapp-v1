@@ -3,7 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- maximum-scale/user-scalable: the app owns zoom, not the browser. Only the
+         asset image viewer zooms, and it does it itself. iOS Safari ignores both
+         of these - see src/lib/disable-page-zoom.ts. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
     <meta name="theme-color" content="#121113" />
     <!-- iOS ignores the manifest for these three -->
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />

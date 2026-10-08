@@ -39,8 +39,18 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
   const { categorias } = useAppState();
 
   const handleImageUpload = async (file: File) => {
-    const uri = await resizeImage(file, 1920, 0.9);
-    setImage(uri);
+    // The accept list below lets non-images through, so check the real type
+    // before handing anything to createImageBitmap.
+    if (!file.type.startsWith("image/")) {
+      toast.error("Ese archivo no es una imagen");
+      return;
+    }
+    try {
+      const uri = await resizeImage(file, 1920, 0.9);
+      setImage(uri);
+    } catch {
+      toast.error("No se pudo leer la imagen");
+    }
   };
 
   const handleSubmit = async () => {
@@ -115,9 +125,17 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
             </SelectContent>
           </Select>
           <Label>Imagen</Label>
+          {/*
+            * accept is "image/*,text/plain", not plain "image/*": Android hides
+            * the Camera entry from the picker for a single-type image accept,
+            * and a second, unrelated type brings the full chooser back. The
+            * cost is that a text file can be selected, which handleImageUpload
+            * rejects.
+            */}
           <Input
             type="file"
-            accept="image/*"
+            accept="image/*,text/plain"
+            className="min-h-11 sm:min-h-0"
             onChange={async (e) => {
               const file = e.target.files?.[0];
               if (file) {

@@ -6,6 +6,14 @@
     }
 }
 
+/* The browser does not get to zoom the app. `pan-x pan-y` keeps every scroll
+   container working while dropping pinch-zoom and double-tap zoom; the asset
+   image viewer sets `touch-action: none` and runs its own gestures instead.
+   See src/lib/disable-page-zoom.ts for the iOS half of this. */
+html {
+    touch-action: pan-x pan-y;
+}
+
 :root {
     --safe-area-top: env(safe-area-inset-top, 0px);
     --safe-area-bottom: env(safe-area-inset-bottom, 0px);
