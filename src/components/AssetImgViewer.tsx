@@ -9,6 +9,12 @@ type View = { scale: number; x: number; y: number };
 
 const FIT: View = { scale: 1, x: 0, y: 0 };
 const MAX_SCALE = 6;
+/**
+ * Below 1 the whole image is already visible, so zooming out further only
+ * shrinks it - but pinching in and hitting a wall feels broken, so allow some
+ * room. `clamp` pins the image to the centre at anything under 1.
+ */
+const MIN_SCALE = 0.5;
 const DOUBLE_TAP_SCALE = 2.5;
 const DOUBLE_TAP_MS = 300;
 /** A press that travels further than this is a drag, not a tap. */
@@ -29,7 +35,7 @@ const WHEEL_DELTA_CAP_PX = 100;
 /** Fallback px per line for `deltaMode: DOM_DELTA_LINE` (Firefox reports 3). */
 const WHEEL_LINE_HEIGHT_PX = 16;
 
-const clampScale = (s: number) => Math.min(Math.max(1, s), MAX_SCALE);
+const clampScale = (s: number) => Math.min(Math.max(MIN_SCALE, s), MAX_SCALE);
 
 /**
  * `deltaY` in pixels, capped. Trackpads emit many small events and stay
@@ -183,7 +189,9 @@ const AssetImgViewer: React.FC<AssetImgViewerProps> = ({ base64Img }) => {
   const toggleZoomAt = useCallback(
     (clientX: number, clientY: number) => {
       const from = viewRef.current;
-      if (from.scale > 1) {
+      // Anywhere off fit - zoomed in or out - the double tap means "back to
+      // fit"; only from fit itself does it zoom in.
+      if (Math.abs(from.scale - 1) > 0.01) {
         apply(FIT);
         return;
       }
