@@ -162,7 +162,6 @@ const MobileFoodScreen = () => {
                 <>
                     <div className="flex gap-2">
                         <Button
-                            variant="outline"
                             className="min-h-11"
                             aria-label="Nuevo producto"
                             onClick={() => {
@@ -254,7 +253,6 @@ const MobileFoodScreen = () => {
                 <>
                     <div className="flex gap-2">
                         <Button
-                            variant="outline"
                             className="min-h-11"
                             aria-label="Nueva transacción"
                             onClick={() => {

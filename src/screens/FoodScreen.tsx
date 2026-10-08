@@ -56,7 +56,7 @@ const FoodScreen = () => {
             <div className='flex flex-col gap-2 overflow-y-auto'>
                 <ScreenTitle title='Food Storage' />
                 <div className='flex gap-2'>
-                    <Button variant="outline" onClick={() => {
+                    <Button onClick={() => {
                         setOpenFoodItemDialog(!openFoodItemDialog)
                     }}><CirclePlus /></Button>
                     <Button variant="outline" onClick={() => {
@@ -83,7 +83,7 @@ const FoodScreen = () => {
                 <ScreenTitle title='Transacciones' />
                 <div className='flex items-center justify-between'>
                     <div className='flex gap-2'>
-                        <Button variant="outline" onClick={() => {
+                        <Button onClick={() => {
                             setOpenFoodTransactionDialog(!openFoodTransactionDialog)
                         }}><CirclePlus /></Button>
                         <Button variant="outline" onClick={() => {

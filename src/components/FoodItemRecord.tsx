@@ -100,7 +100,7 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
         <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             {!hideButton && (
                 <DialogTrigger asChild>
-                    <Button variant="outline"><CirclePlus /></Button>
+                    <Button><CirclePlus /></Button>
                 </DialogTrigger>
             )}
             <DialogContent className="sm:max-w-106.25">

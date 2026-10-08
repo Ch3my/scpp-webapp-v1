@@ -139,7 +139,7 @@ const Dashboard: React.FC = () => {
             <div className="flex flex-col overflow-auto h-full">
                 <ScreenTitle title="Dashboard" />
                 <div className='flex gap-2 px-1 mb-2'>
-                    <Button variant="outline" onClick={handleNewDocBtn}>
+                    <Button onClick={handleNewDocBtn}>
                         <CirclePlus />
                     </Button>
                     <Button variant="outline" onClick={() => handleTipoDocChange(selectedTipoDoc.toString(), true)}>

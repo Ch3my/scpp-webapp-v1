@@ -437,7 +437,7 @@ const MobileDashboard = () => {
             <Button
                 onClick={openNewDoc}
                 aria-label="Nuevo documento"
-                className="fixed right-4 z-40 size-14 rounded-full shadow-lg"
+                className="fixed right-4 z-40 size-14 rounded-xl shadow-lg"
                 style={{ bottom: 'calc(4.5rem + var(--safe-area-bottom))' }}
             >
                 <CirclePlus className="size-6" />

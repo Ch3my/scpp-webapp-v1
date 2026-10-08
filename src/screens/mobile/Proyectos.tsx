@@ -116,7 +116,6 @@ const MobileProyectos = () => {
         <div className="flex flex-col gap-3 p-3">
             <div className="flex gap-2">
                 <Button
-                    variant="outline"
                     className="min-h-11"
                     aria-label="Nuevo proyecto"
                     onClick={() => {

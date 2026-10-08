@@ -113,7 +113,7 @@ const ProyectoRecord: React.FC<ProyectoRecordProps> = ({ hideButton = false, onO
     return (
         <>
             {!hideButton && (
-                <Button variant="outline" onClick={() => handleDialogChange(true)}>
+                <Button onClick={() => handleDialogChange(true)}>
                     <CirclePlus />
                 </Button>
             )}

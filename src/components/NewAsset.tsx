@@ -94,7 +94,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
   return (
     <Dialog onOpenChange={setOpen} open={open}>
       <DialogTrigger asChild>
-        <Button variant="outline"><CirclePlus /></Button>
+        <Button className="min-h-11 sm:min-h-0"><CirclePlus /></Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-106.25">
         <DialogHeader>

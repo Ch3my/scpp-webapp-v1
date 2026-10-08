@@ -118,7 +118,7 @@ const Proyectos = () => {
             <div className='flex flex-col gap-2 overflow-y-auto'>
                 <ScreenTitle title='Proyectos' />
                 <div className='flex gap-2'>
-                    <Button variant="outline" onClick={handleNewProyecto}><CirclePlus /></Button>
+                    <Button onClick={handleNewProyecto}><CirclePlus /></Button>
                     <Button variant="outline" onClick={handleResetFilters}><ListRestart /></Button>
                     <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as StatusFilter)}>
                         <SelectTrigger>

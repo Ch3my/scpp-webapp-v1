@@ -211,7 +211,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     return (
         <>
             {!hideButton && (
-                <Button variant="outline" onClick={() => handleDialogChange(true)}>
+                <Button onClick={() => handleDialogChange(true)}>
                     <CirclePlus />
                 </Button>
             )}

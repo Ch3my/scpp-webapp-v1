@@ -154,7 +154,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
     return (
         <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             {!hideButton && <DialogTrigger asChild>
-                <Button variant="outline"><CirclePlus /></Button>
+                <Button><CirclePlus /></Button>
             </DialogTrigger>}
             <DialogContent className="sm:max-w-md">
                 <DialogHeader>
