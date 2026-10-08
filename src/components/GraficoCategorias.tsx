@@ -1,6 +1,5 @@
 import { forwardRef, useImperativeHandle, useMemo, useState } from "react";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
-import api from "@/lib/api";
 import {
     ChartConfig,
     ChartContainer,
@@ -11,7 +10,7 @@ import { Skeleton } from "./ui/skeleton";
 import numeral from "numeral";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { DateTime } from "luxon";
-import { useQuery } from "@tanstack/react-query";
+import { useExpensesByCategory } from "@/api/hooks";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import { Slider } from "./ui/slider";
@@ -48,7 +47,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 13 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(13)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 13M
             </Button>
@@ -56,7 +55,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 6 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(6)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 6M
             </Button>
@@ -64,7 +63,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 3 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(3)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 3M
             </Button>
@@ -79,33 +78,27 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
         const [nMonths, setNMonths] = useState<number>(3);
         const [visibleCount, setVisibleCount] = useState<number | null>(null);
 
-        const fetchData = async () => {
-            const { data: result } = await api.get(`/expenses-by-category?nMonths=${nMonths}`);
+        const { data: result, isLoading, refetch } = useExpensesByCategory(nMonths);
 
-            // Transform the raw data into the shape Recharts needs
-            // We'll use the `data` array from the response:
-            // Each item has { label, data, catId }
-            const chartData: ChartDataItem[] = result.data.map((item: any) => ({
-                category: item.label, // e.g. "Vivienda"
-                amount: item.data, // e.g. 4283327
-                catId: item.catId, // optional if you need it for any additional logic
-            }));
+        // Reshaped for Recharts: { label, data, catId } -> { category, amount, catId }
+        const allChartData: ChartDataItem[] = useMemo(
+            () => (result?.data ?? []).map((item) => ({
+                category: item.label,
+                amount: item.data,
+                catId: item.catId,
+            })),
+            [result]
+        );
 
-            const range = {
-                start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
-                end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
-            };
-
-            return { chartData, range };
-        };
-
-        const { data, isLoading, refetch } = useQuery({
-            queryKey: ['dashboard', 'expenses-by-category', nMonths],
-            queryFn: fetchData,
-        });
-
-        const allChartData = data?.chartData || [];
-        const range = data?.range || { start: DateTime.now(), end: DateTime.now() };
+        const range = useMemo(
+            () => result
+                ? {
+                    start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
+                    end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
+                }
+                : { start: DateTime.now(), end: DateTime.now() },
+            [result]
+        );
 
         // Calculate the actual visible count: use state if set, otherwise 60% of total
         const totalCategories = allChartData.length;
@@ -209,7 +202,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                     </ChartContainer>
                     {totalCategories > MIN_CATEGORIES && (
                         <div className="mt-4 flex items-center gap-3">
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                            <span className="text-base sm:text-sm text-muted-foreground whitespace-nowrap">
                                 {effectiveVisibleCount} / {totalCategories}
                             </span>
                             <Slider

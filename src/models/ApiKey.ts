@@ -1,41 +1,12 @@
-export type ApiKey = {
-    id: number;
-    keyPrefix: string;
-    name: string;
-    rateLimit: number;
-    isActive: boolean;
-    lastUsedAt: string | null;
-    expiresAt: string | null;
-    createdAt: string;
-    revokedAt: string | null;
-};
+import type { components } from "@/api/schema";
 
-export type CreateApiKeyPayload = {
-    name: string;
-    rateLimit?: number;
-    expiresAt?: string | null;
-};
+/** Generated from the backend OpenAPI spec. Refresh with `npm run gen:api`. */
+export type ApiKey = components["schemas"]["ApiKeyResponse"];
 
-export type CreateApiKeyResponse = {
-    success: true;
-    successDescription: string[];
-    apiKey: {
-        id: number;
-        key: string;
-        keyPrefix: string;
-        name: string;
-        rateLimit: number;
-        expiresAt: string | null;
-        createdAt: string;
-    };
-};
+export type CreateApiKeyPayload = components["schemas"]["CreateApiKeyRequest"];
 
-export type ApiKeysListResponse = {
-    success: true;
-    apiKeys: ApiKey[];
-};
+/** The full `apiKey.key` is returned only once, at creation. */
+export type CreateApiKeyResponse = components["schemas"]["CreateApiKeyResponse"];
 
-export type ApiKeyActionResponse = {
-    success: true;
-    successDescription: string[];
-};
+export type ApiKeysListResponse = components["schemas"]["ListApiKeysResponse"];
+export type ApiKeyActionResponse = components["schemas"]["SuccessResponse"];

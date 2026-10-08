@@ -1,4 +1,3 @@
-import { FolderKanban, Home, KeyRound, Settings, SquarePlay, Wheat } from "lucide-react"
 import { Link, useLocation } from "react-router"
 
 import {
@@ -11,40 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-
-// Menu items.
-const items = [
-  {
-    title: "Home",
-    url: "/dashboard",
-    icon: Home,
-  },
-  {
-    title: "Assets",
-    url: "/assets",
-    icon: SquarePlay,
-  },
-  {
-    title: "Food",
-    url: "/food",
-    icon: Wheat,
-  },
-  {
-    title: "Proyectos",
-    url: "/proyectos",
-    icon: FolderKanban,
-  },
-  {
-    title: "API Keys",
-    url: "/api-keys",
-    icon: KeyRound,
-  },
-  {
-    title: "Settings",
-    url: "/htas",
-    icon: Settings,
-  },
-]
+import { navItems } from "@/shell/nav-items"
 
 export function AppSidebar() {
   const location = useLocation()
@@ -56,7 +22,7 @@ export function AppSidebar() {
           <SidebarGroupLabel>SCPP</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {navItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild isActive={location.pathname === item.url}>
                     <Link to={item.url}>

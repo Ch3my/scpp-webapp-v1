@@ -7,7 +7,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,13 +16,11 @@ import { useState, useEffect } from "react";
 import { DatePicker } from "./DatePicker";
 import { DateTime } from "luxon";
 import { toast } from "sonner";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useCreateApiKey } from "@/api/hooks";
 import { CreateApiKeyResponse } from "@/models/ApiKey";
 import ApiKeyCreatedDialog from "./ApiKeyCreatedDialog";
 
 export function CreateApiKeyDialog() {
-    const queryClient = useQueryClient();
     const [isOpen, setIsOpen] = useState(false);
 
     const [name, setName] = useState("");
@@ -45,27 +43,7 @@ export function CreateApiKeyDialog() {
         }
     }, [isOpen]);
 
-    const mutation = useMutation({
-        mutationFn: async () => {
-            const payload = {
-                name,
-                rateLimit,
-                expiresAt: neverExpires ? null : expiresAt?.toISO() ?? null,
-            };
-            const { data } = await api.post<CreateApiKeyResponse>("/api-keys", payload);
-            if (!data.success) {
-                throw new Error("Failed to create API key");
-            }
-            return data.apiKey;
-        },
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-            setCreatedKey(data);
-        },
-        onError: () => {
-            toast.error("Failed to create API key");
-        }
-    });
+    const mutation = useCreateApiKey();
 
     const handleCreate = () => {
         if (!name.trim()) {
@@ -76,7 +54,17 @@ export function CreateApiKeyDialog() {
             toast("Rate limit must be between 10 and 10000");
             return;
         }
-        mutation.mutate();
+        mutation.mutate(
+            {
+                name,
+                rateLimit,
+                expiresAt: neverExpires ? null : expiresAt?.toISO() ?? null,
+            },
+            {
+                onSuccess: (apiKey) => setCreatedKey(apiKey),
+                onError: () => toast.error("Failed to create API key"),
+            }
+        );
     };
 
     const handleKeyAcknowledged = () => {

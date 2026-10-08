@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog"
+} from "@/components/responsive-dialog"
 import {
   Select,
   SelectContent,
@@ -25,9 +25,11 @@ import { DateTime } from "luxon";
 import { useAppState } from "@/AppState"
 import { resizeImage } from "@/lib/resize-image";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import { useCreateAsset } from "@/api/hooks";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
-export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
+export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
+  const createAsset = useCreateAsset();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [descripcion, setDescripcion] = useState("");
@@ -50,12 +52,20 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved: () => void }) {
     }
 
     try {
-      await api.post("/assets", { descripcion, fecha, fk_categoria: categoria, assetData: image });
+      // The API wants an ISO string. This used to pass the DateTime object and
+      // rely on JSON.stringify calling toJSON(); toISO() is the same value, said out loud.
+      await createAsset.mutateAsync({
+        descripcion,
+        fecha: fecha.toISO() ?? "",
+        fk_categoria: categoria,
+        assetData: image,
+      });
       toast('Asset guardado');
       setOpen(false);
-      onAssetSaved()
+      onAssetSaved?.()
     } catch (error) {
-      console.error(error);
+      // Previously only logged, leaving the dialog open with no explanation
+      toast.error('Error al guardar el asset: ' + getApiErrorMessage(error));
     }
     setBusy(false)
   };

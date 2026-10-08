@@ -9,8 +9,8 @@ import { Skeleton } from "./ui/skeleton";
 import { Slider } from "./ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import numeral from "numeral";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useMonthlyGraph } from "@/api/hooks";
+import type { MonthlyGraphData } from "@/models/MonthlyGraphData";
 
 Settings.defaultLocale = "es";
 
@@ -45,20 +45,20 @@ function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
         return () => clearTimeout(timer);
     }, [offset]);
 
-    const { data: monthlyGraphData, isLoading, refetch } = useQuery({
-        queryKey: ['dashboard', 'monthly-graph', debouncedNMonths, debouncedOffset],
-        queryFn: async () => {
-            const { data } = await api.get(`/monthly-graph?nMonths=${debouncedNMonths}&offset=${debouncedOffset}`);
-            return data;
-        },
-    });
+    const { data: monthlyGraphData, isLoading, refetch } = useMonthlyGraph(
+        debouncedNMonths,
+        debouncedOffset
+    );
 
     // Keep ref for backwards compatibility
     useImperativeHandle(ref, () => ({
         refetchData: () => refetch(),
     }))
 
-    const safeData = monthlyGraphData ?? { labels: [], gastosDataset: [], ingresosDataset: [], ahorrosDataset: [] };
+    // `range` stays optional here: the loading fallback has no window to show,
+    // and the header below falls back to "<n> meses" when it is absent.
+    const safeData: Omit<MonthlyGraphData, "range"> & { range?: MonthlyGraphData["range"] } =
+        monthlyGraphData ?? { labels: [], gastosDataset: [], ingresosDataset: [], ahorrosDataset: [] };
 
     const chartData = safeData.labels.map((label: string, index: number) => {
         const dt = DateTime.fromFormat(label, "yyyy-MM");

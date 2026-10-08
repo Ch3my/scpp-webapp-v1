@@ -6,7 +6,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 import { AlertTriangle, Copy, Check } from "lucide-react";
 import { useState } from "react";
 import { CreateApiKeyResponse } from "@/models/ApiKey";

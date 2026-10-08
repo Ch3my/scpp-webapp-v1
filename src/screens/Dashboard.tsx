@@ -1,8 +1,7 @@
-import { useState, useTransition, lazy, Suspense } from 'react';
+import { useState, useMemo, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
 import { useAppState } from "@/AppState"
-import { useQuery } from '@tanstack/react-query';
-import api from "@/lib/api";
+import { useDocumentos, type DocumentFilters } from '@/api/hooks';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -53,29 +52,25 @@ const Dashboard: React.FC = () => {
     // useTransition for filter changes - keeps UI responsive while fetching new data
     const [isFilterPending, startFilterTransition] = useTransition();
 
-    const fetchDocs = async () => {
-        let params = new URLSearchParams();
-        params.set("fechaInicio", fechaInicio?.toFormat('yyyy-MM-dd'));
-        params.set("fechaTermino", fechaTermino?.toFormat('yyyy-MM-dd'));
-        params.set("searchPhrase", searchPhrase);
-        params.set("fk_tipoDoc", selectedTipoDoc.toString());
-        params.set("searchPhraseIgnoreOtherFilters", searchPhraseIgnoreOtherFilters.toString());
+    // Serialised here so the query key is plain data rather than DateTime objects
+    const filters = useMemo<DocumentFilters>(() => ({
+        fechaInicio: fechaInicio.toFormat('yyyy-MM-dd'),
+        fechaTermino: fechaTermino.toFormat('yyyy-MM-dd'),
+        searchPhrase,
+        fk_tipoDoc: selectedTipoDoc,
+        searchPhraseIgnoreOtherFilters,
+        fk_categoria: selectedCategoria > 0 ? selectedCategoria : null,
+    }), [fechaInicio, fechaTermino, searchPhrase, selectedTipoDoc, searchPhraseIgnoreOtherFilters, selectedCategoria]);
 
-        if (selectedCategoria > 0) {
-            params.set("fk_categoria", selectedCategoria.toString());
-        }
+    const { data: docs = [], isLoading, isPlaceholderData } = useDocumentos(filters);
 
-        const { data } = await api.get(`/documentos?${params.toString()}`);
-        return data;
-    }
+    // True only while showing the PREVIOUS filters' rows, i.e. a filter change
+    // in flight. Deliberately not isFetching: that is also true for background
+    // revalidation (window refocus), where the cached rows are current enough
+    // to stay bright and clickable.
+    const isShowingStale = isPlaceholderData || isFilterPending;
 
-    const { data: docs = [], isLoading, isFetching } = useQuery({
-        queryKey: ['docs', fechaInicio, fechaTermino, selectedCategoria, searchPhrase, selectedTipoDoc, searchPhraseIgnoreOtherFilters],
-        queryFn: fetchDocs,
-        placeholderData: (previousData) => previousData,
-    });
-
-    const totalDocs = docs.reduce((acc: number, doc: any) => acc + doc.monto, 0)
+    const totalDocs = docs.reduce((acc: number, doc) => acc + doc.monto, 0)
 
     const handleFiltersChange = (filters: { fechaInicio: DateTime; fechaTermino: DateTime; categoria: number; searchPhrase: string; searchPhraseIgnoreOtherFilters: boolean }) => {
         setFechaInicio(filters.fechaInicio)
@@ -180,13 +175,13 @@ const Dashboard: React.FC = () => {
                                 <TableHead className="text-right">Monto</TableHead>
                             </TableRow>
                         </TableHeader>
-                        <TableBody style={{ opacity: isFetching || isFilterPending ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                        <TableBody style={{ opacity: isShowingStale ? 0.5 : 1, transition: 'opacity 0.2s' }}>
                             {docs.length === 0 && !isLoading && (
                                 <TableRow className='text-center text-muted-foreground'>
                                     <TableCell colSpan={3}>Sin Datos</TableCell>
                                 </TableRow>)}
-                            {docs.map((doc: any, index: number) => (
-                                <TableRow key={index} onClick={() => !(isFetching || isFilterPending) && handleRowClick(doc)} style={{ cursor: isFetching || isFilterPending ? 'not-allowed' : 'pointer' }}>
+                            {docs.map((doc, index) => (
+                                <TableRow key={index} onClick={() => !isShowingStale && handleRowClick(doc)} style={{ cursor: isShowingStale ? 'not-allowed' : 'pointer' }}>
                                     <TableCell>{doc.fecha}</TableCell>
                                     <TableCell>{doc.proposito}</TableCell>
                                     <TableCell className="text-right">{numeral(doc.monto).format("0,0")}</TableCell>

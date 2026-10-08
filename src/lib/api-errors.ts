@@ -8,6 +8,11 @@
 export function getApiErrorMessage(err: unknown, fallback = 'Error desconocido'): string {
     const anyErr = err as any;
     const desc = anyErr?.response?.data?.errorDescription;
-    if (Array.isArray(desc) && desc.length > 0) return String(desc[0]);
+    if (Array.isArray(desc) && desc.length > 0) {
+        // A failed login answers 500 with errorDescription: [""], which would
+        // otherwise surface as a toast with a blank reason.
+        const first = String(desc[0]).trim();
+        if (first !== '') return first;
+    }
     return anyErr?.message ? String(anyErr.message) : fallback;
 }

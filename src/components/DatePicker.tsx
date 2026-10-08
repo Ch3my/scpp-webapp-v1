@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/popover";
 import { DateTime } from "luxon";
 import { useEffect } from "react";
+import { useLayoutMode } from "@/shell/useLayoutMode";
 
 interface DatePickerProps {
     value?: DateTime | undefined;
@@ -19,6 +20,7 @@ interface DatePickerProps {
 }
 
 export const DatePicker: React.FC<DatePickerProps & { className?: string }> = ({ value, onChange, className, disabled  }) => {
+    const isMobile = useLayoutMode() === "mobile";
     const [selectedDate, setSelectedDate] = React.useState<DateTime | undefined>(value);
 
     useEffect(() => {
@@ -50,18 +52,27 @@ export const DatePicker: React.FC<DatePickerProps & { className?: string }> = ({
                     </Button>
                 </span>
             </PopoverTrigger>
+            {/*
+              * Desktop opens to the right of the trigger with a negative offset so
+              * the calendar overlaps the field. On a phone the trigger is nearly
+              * full width, so "right" puts the calendar half off-screen - there it
+              * drops below instead, with collisionPadding keeping it inside the
+              * viewport.
+              */}
             <PopoverContent
                 className="w-auto p-0"
-                side="right"
+                side={isMobile ? "bottom" : "right"}
                 align="center"
-                sideOffset={-40}
+                sideOffset={isMobile ? 4 : -40}
+                collisionPadding={isMobile ? 8 : undefined}
             >
                 <Calendar
                     mode="single"
                     selected={selectedDate?.toJSDate()}
                     onSelect={handleSelect}
                     captionLayout="dropdown"
-                    className="p-2 [--cell-size:1.8125rem]"
+                    // Bigger day cells on mobile: 1.8125rem is a 29px tap target
+                    className={isMobile ? "p-2 [--cell-size:2.25rem]" : "p-2 [--cell-size:1.8125rem]"}
                 />
             </PopoverContent>
         </Popover>

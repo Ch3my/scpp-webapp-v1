@@ -1,5 +1,16 @@
-html {
-    font-size: 17px;
+/* Desktop-only root scale. Applied globally it inflates every Tailwind rem by
+   6%, which compounds badly on small screens. */
+@media (min-width: 768px) {
+    html {
+        font-size: 17px;
+    }
+}
+
+:root {
+    --safe-area-top: env(safe-area-inset-top, 0px);
+    --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-area-left: env(safe-area-inset-left, 0px);
+    --safe-area-right: env(safe-area-inset-right, 0px);
 }
 
 * {

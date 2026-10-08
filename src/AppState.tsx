@@ -1,17 +1,32 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import api from "@/lib/api"
+import type { Categoria, TipoDoc } from "@/models/Catalogos"
 
+/**
+ * Which shell to render. "auto" follows the viewport; the explicit values let
+ * someone pin a layout - useful on a tablet, and for checking the mobile shell
+ * from a desktop browser.
+ */
+export type LayoutOverride = "auto" | "mobile" | "desktop"
+
+// Without a default, a fresh install (or storage cleared by the browser) boots
+// with a blank apiPrefix and every request fails until someone types the URL by
+// hand in /config - unusable on a phone.
+const DEFAULT_API_PREFIX =
+    import.meta.env.VITE_DEFAULT_API_PREFIX ?? "https://scpp.lezora.cl"
 
 interface State {
     isLoggedIn: boolean
     apiPrefix: string
     sessionId: string
-    categorias: any[]
-    tipoDocs: any[]
+    categorias: Categoria[]
+    tipoDocs: TipoDoc[]
+    layoutOverride: LayoutOverride
     setLoggedIn: (isLoggedIn: boolean) => void
     setApiPrefix: (apiPrefix: string) => void
     setSessionId: (sessionId: string) => void
+    setLayoutOverride: (layoutOverride: LayoutOverride) => void
     // Async actions to fetch the data
     fetchCategorias: () => Promise<void>
     fetchTipoDocs: () => Promise<void>
@@ -21,16 +36,18 @@ export const useAppState = create<State>()(
     persist(
         (set) => ({
             isLoggedIn: false,
-            apiPrefix: "",
+            apiPrefix: DEFAULT_API_PREFIX,
             sessionId: "",
             categorias: [],
             tipoDocs: [],
+            layoutOverride: "auto",
             setLoggedIn: (isLoggedIn: boolean) => set({ isLoggedIn }),
             setApiPrefix: (apiPrefix: string) => set({ apiPrefix }),
             setSessionId: (sessionId: string) => set({ sessionId }),
+            setLayoutOverride: (layoutOverride: LayoutOverride) => set({ layoutOverride }),
             fetchCategorias: async () => {
                 try {
-                    const { data } = await api.get("/categorias")
+                    const { data } = await api.get<Categoria[]>("/categorias")
                     set({ categorias: data })
                 } catch (error) {
                     console.error("Failed to fetch categorias:", error)
@@ -40,7 +57,7 @@ export const useAppState = create<State>()(
             // Fetch tipoDocs from your API
             fetchTipoDocs: async () => {
                 try {
-                    const { data } = await api.get("/tipo-docs")
+                    const { data } = await api.get<TipoDoc[]>("/tipo-docs")
                     set({ tipoDocs: data })
                 } catch (error) {
                     console.error("Failed to fetch tipoDocs:", error)
@@ -49,6 +66,16 @@ export const useAppState = create<State>()(
         }),
         {
             name: "app-storage",
+            // persist shallow-merges by default, so a previously stored empty
+            // apiPrefix would shadow DEFAULT_API_PREFIX forever.
+            merge: (persisted, current) => {
+                const stored = (persisted ?? {}) as Partial<State>
+                return {
+                    ...current,
+                    ...stored,
+                    apiPrefix: stored.apiPrefix || current.apiPrefix,
+                }
+            },
         }
     )
 )

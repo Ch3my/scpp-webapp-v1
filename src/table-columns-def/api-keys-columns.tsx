@@ -21,10 +21,20 @@ const statusConfig: Record<ApiKeyStatus, { label: string; className: string }> =
     expired: { label: 'Expired', className: 'bg-yellow-500/15 text-yellow-700 border-yellow-500/20' },
 };
 
-function getStatus(key: ApiKey): ApiKeyStatus {
+export function getApiKeyStatus(key: ApiKey): ApiKeyStatus {
     if (key.revokedAt) return 'revoked';
     if (key.expiresAt && new Date(key.expiresAt) < new Date()) return 'expired';
     return key.isActive ? 'active' : 'revoked';
+}
+
+/** Shared by the desktop column and the mobile card so the logic lives once. */
+export function ApiKeyStatusBadge({ apiKey }: { apiKey: ApiKey }) {
+    const config = statusConfig[getApiKeyStatus(apiKey)];
+    return (
+        <Badge variant="outline" className={config.className}>
+            {config.label}
+        </Badge>
+    );
 }
 
 export const columns: ColumnDef<typeof tableFeaturesConfig, ApiKey>[] = [
@@ -44,15 +54,7 @@ export const columns: ColumnDef<typeof tableFeaturesConfig, ApiKey>[] = [
     {
         id: "status",
         header: "Status",
-        cell: ({ row }) => {
-            const status = getStatus(row.original);
-            const config = statusConfig[status];
-            return (
-                <Badge variant="outline" className={config.className}>
-                    {config.label}
-                </Badge>
-            );
-        },
+        cell: ({ row }) => <ApiKeyStatusBadge apiKey={row.original} />,
     },
     {
         accessorKey: "lastUsedAt",
@@ -77,7 +79,7 @@ export const columns: ColumnDef<typeof tableFeaturesConfig, ApiKey>[] = [
                 deleteApiKey: (key: ApiKey) => void;
             };
             const apiKey = row.original;
-            const status = getStatus(apiKey);
+            const status = getApiKeyStatus(apiKey);
             const isActive = status === 'active';
 
             return (

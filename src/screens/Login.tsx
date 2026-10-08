@@ -13,66 +13,72 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAppState } from "@/AppState"
 import { Link, useNavigate } from "react-router"
-// Para evitar CORS, usa RUST para hacer las request
-
+import { useLogin } from "@/api/hooks"
+import { getApiErrorMessage } from "@/lib/api-errors"
 
 export default function Login() {
     const [user, setUser] = useState<string>("");
     const [pass, setPass] = useState<string>("");
     let navigate = useNavigate();
-    const { apiPrefix, setSessionId, setLoggedIn, fetchCategorias, fetchTipoDocs } = useAppState()
+    const { setSessionId, setLoggedIn, fetchCategorias, fetchTipoDocs } = useAppState()
+    const loginMutation = useLogin()
 
     const login = async () => {
         if (!user || !pass) {
             toast("Ingresa Datos")
             return
         }
-        const response = await fetch(`${apiPrefix}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ username: user, password: pass }),
-        }).then(response => response.json())
 
-        if (response.hasErrors) {
-            toast("Error al Iniciar Sesion", { description: response.errorDescription[0] })
-            return
+        try {
+            const response = await loginMutation.mutateAsync({ username: user, password: pass })
+
+            setSessionId(response.sessionHash)
+            setLoggedIn(true)
+
+            await Promise.all([fetchCategorias(), fetchTipoDocs()]);
+
+            navigate("/dashboard")
+        } catch (error) {
+            toast("Error al Iniciar Sesion", { description: getApiErrorMessage(error) })
         }
-        setSessionId(response.sessionHash)
-        setLoggedIn(true)
+    }
 
-        await Promise.all([fetchCategorias(), fetchTipoDocs()]);
-
-        navigate("/dashboard")
+    // Without this the form reloads the page on Enter / the phone keyboard's Go
+    const handleSubmit = (event: React.FormEvent) => {
+        event.preventDefault()
+        login()
     }
 
     return (
-        <div className="items-center justify-center w-screen h-screen flex">
-            <Card className="w-125">
+        <div className="flex min-h-svh w-full items-center justify-center p-4">
+            <Card className="w-full max-w-125">
                 <CardHeader>
                     <CardTitle>Iniciar Sesion</CardTitle>
                     <CardDescription>En sistema de control de presupuestos personales</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form>
+                    <form onSubmit={handleSubmit}>
                         <div className="grid w-full items-center gap-4">
                             <div className="flex flex-col space-y-1.5">
                                 <Label htmlFor="name">Usuario</Label>
-                                <Input id="name" onChange={e => setUser(e.target.value)} />
+                                <Input id="name" autoComplete="username" onChange={e => setUser(e.target.value)} />
                             </div>
                             <div className="flex flex-col space-y-1.5">
-                                <Label htmlFor="name">Password</Label>
-                                <Input id="password" type="password" onChange={e => setPass(e.target.value)} />
+                                <Label htmlFor="password">Password</Label>
+                                <Input id="password" type="password" autoComplete="current-password" onChange={e => setPass(e.target.value)} />
                             </div>
                         </div>
+                        {/* Submits on Enter without taking visual space */}
+                        <button type="submit" className="hidden" aria-hidden="true" tabIndex={-1} />
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-between">
                     <Button variant="outline" asChild>
                         <Link to="/config">Config</Link>
                     </Button>
-                    <Button onClick={() => login()}>Entrar</Button>
+                    <Button onClick={() => login()} disabled={loginMutation.isPending}>
+                        {loginMutation.isPending ? "Entrando..." : "Entrar"}
+                    </Button>
                 </CardFooter>
             </Card>
         </div>

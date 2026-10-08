@@ -46,7 +46,7 @@ export function ComboboxCategorias({ value, onChange, disabled }: ComboboxCatego
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[200px] p-0" align="start">
+      <PopoverContent className="w-[200px] max-w-[calc(100vw-1.5rem)] p-0" align="start">
         <Command>
           <CommandInput className="h-9" />
           <CommandList>

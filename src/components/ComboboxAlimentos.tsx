@@ -17,10 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Food } from "@/models/Food"
-import { useQuery } from '@tanstack/react-query';
-
-import { DateTime } from 'luxon';
-import api from "@/lib/api";
+import { useFoodItemQuantity } from "@/api/hooks";
 
 interface ComboboxAlimentosProps {
   value: number;
@@ -45,21 +42,9 @@ export function ComboboxAlimentos({
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
 
-  const { data: foods = [] } = useQuery<Food[]>({
-    queryKey: ['foodsCombobox'], // Use a different query key to avoid conflicts
-    queryFn: async () => {
-      const { data: apiData } = await api.get("/food/item-quantity");
-
-      const transformedData = apiData.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        unit: item.unit,
-        quantity: item.quantity,
-        lastTransactionAt: item.last_transaction_at ? DateTime.fromISO(item.last_transaction_at) : null
-      }));
-      return transformedData;
-    }
-  });
+  // Shares FoodSummary's cache entry - this used to be a second request for
+  // the same endpoint under a separate key.
+  const { data: foods = [] } = useFoodItemQuantity();
 
   const allFoods = hideTodos ? foods : [{ id: 0, name: "(Todos)" } as Food, ...foods];
 
@@ -87,14 +72,16 @@ export function ComboboxAlimentos({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between font-normal w-75"
+          // w-full below sm so it shrinks into a phone-width row; desktop keeps 300px
+          className="justify-between overflow-hidden font-normal w-full sm:w-75"
           disabled={disabled}
         >
-          {getDisplayText()}
-          <ChevronsUpDown className="opacity-50" />
+          <span className="truncate">{getDisplayText()}</span>
+          <ChevronsUpDown className="shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-75 p-0" align="start">
+      {/* max-w cap so the 300px panel cannot overflow a narrow phone */}
+      <PopoverContent className="w-75 max-w-[calc(100vw-1.5rem)] p-0" align="start">
         <Command>
           <CommandInput className="h-9" />
           <CommandList>

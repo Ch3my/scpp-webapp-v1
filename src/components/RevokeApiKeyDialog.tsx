@@ -6,12 +6,11 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 import { Loader2 } from "lucide-react";
 import { ApiKey } from "@/models/ApiKey";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import { useRevokeApiKey } from "@/api/hooks";
 
 interface Props {
     apiKey: ApiKey | null;
@@ -19,26 +18,17 @@ interface Props {
 }
 
 export default function RevokeApiKeyDialog({ apiKey, onClose }: Props) {
-    const queryClient = useQueryClient();
-
-    const mutation = useMutation({
-        mutationFn: async (id: number) => {
-            await api.post(`/api-keys/${id}/revoke`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-            toast("API key revoked");
-            onClose();
-        },
-        onError: () => {
-            toast.error("Failed to revoke API key");
-        }
-    });
+    const mutation = useRevokeApiKey();
 
     const handleRevoke = () => {
-        if (apiKey) {
-            mutation.mutate(apiKey.id);
-        }
+        if (!apiKey) return;
+        mutation.mutate(apiKey.id, {
+            onSuccess: () => {
+                toast("API key revoked");
+                onClose();
+            },
+            onError: () => toast.error("Failed to revoke API key"),
+        });
     };
 
     return (

@@ -28,8 +28,8 @@ export default function Config() {
     }
 
     return (
-        <div className="items-center justify-center w-screen h-screen flex">
-            <Card className="w-125">
+        <div className="flex min-h-svh w-full items-center justify-center p-4">
+            <Card className="w-full max-w-125">
                 <CardHeader>
                     <CardTitle>Configuracion</CardTitle>
                     <CardDescription>Debe existir un API endpoint valido</CardDescription>

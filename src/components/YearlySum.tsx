@@ -4,30 +4,29 @@ import { Skeleton } from './ui/skeleton';
 import { ArrowBigDownDash, ArrowBigUpDash, Minus } from 'lucide-react';
 import { CardHeader, CardDescription, CardTitle, Card, CardContent } from './ui/card';
 import { DateTime } from 'luxon';
-import { useQuery } from '@tanstack/react-query';
-import api from "@/lib/api";
+import { useMemo } from 'react';
+import { useYearlySum } from '@/api/hooks';
 
 function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ['dashboard', 'yearly-sum'],
-    queryFn: async () => {
-      const { data: result } = await api.get("/yearly-sum?nMonths=12");
+  const { data: result, isLoading, refetch } = useYearlySum(12);
 
-      const gasto = result.data.find((o: any) => o.id == 1);
-      const ingreso = result.data.find((o: any) => o.id == 3);
+  const data = useMemo(() => {
+    if (!result) return undefined;
+    const gasto = result.data.find((o) => o.id === 1);
+    const ingreso = result.data.find((o) => o.id === 3);
+    if (!gasto || !ingreso) return undefined;
 
-      return {
-        gastoSum: gasto.sumMonto,
-        ingresoSum: ingreso.sumMonto,
-        utilidadAnual: 100 - result.porcentajeUsado,
-        montoUtilidad: ingreso.sumMonto - gasto.sumMonto,
-        range: {
-          start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
-          end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
-        },
-      };
-    },
-  });
+    return {
+      gastoSum: gasto.sumMonto,
+      ingresoSum: ingreso.sumMonto,
+      utilidadAnual: 100 - result.porcentajeUsado,
+      montoUtilidad: ingreso.sumMonto - gasto.sumMonto,
+      range: {
+        start: DateTime.fromFormat(result.range.start, "yyyy-MM-dd"),
+        end: DateTime.fromFormat(result.range.end, "yyyy-MM-dd"),
+      },
+    };
+  }, [result]);
 
   const gastoSum = data?.gastoSum ?? 0;
   const ingresoSum = data?.ingresoSum ?? 0;
@@ -84,7 +83,7 @@ function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
             <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
               {numeral(utilidadAnual).format("0,0.0")}%
             </CardTitle>
-            <span className='text-sm'>${numeral(montoUtilidad).format("0,0")}</span>
+            <span className='text-base sm:text-sm'>${numeral(montoUtilidad).format("0,0")}</span>
           </div>
           <div className='justify-self-end'>
             {getIcon()}

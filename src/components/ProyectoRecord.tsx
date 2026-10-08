@@ -5,8 +5,7 @@ import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Switch } from './ui/switch';
 import { toast } from "sonner"
-import { useQueryClient, useMutation } from '@tanstack/react-query';
-import api from "@/lib/api";
+import { useSaveProyecto } from '@/api/hooks';
 import { getApiErrorMessage } from '@/lib/api-errors';
 
 import { Button } from './ui/button';
@@ -17,7 +16,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 
 import { NumberInput } from './NumberInput';
 import { CreateProyecto, Proyecto, UpdateProyecto } from '@/models/Proyecto';
@@ -34,7 +33,6 @@ const ProyectoRecord: React.FC<ProyectoRecordProps> = ({ hideButton = false, onO
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
-    const queryClient = useQueryClient();
     const [nombre, setNombre] = useState<string>('');
     const [descripcion, setDescripcion] = useState<string>('');
     const [orden, setOrden] = useState<number>(0);
@@ -64,25 +62,21 @@ const ProyectoRecord: React.FC<ProyectoRecordProps> = ({ hideButton = false, onO
         }
     };
 
-    const saveMutation = useMutation({
-        mutationFn: async (payload: CreateProyecto | UpdateProyecto) => {
-            const method = isEditMode ? 'put' : 'post';
-            const { data } = await api[method]("/proyectos", payload);
-            if (data?.hasErrors) {
-                throw new Error(data.errorDescription[0]);
-            }
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
-            queryClient.invalidateQueries({ queryKey: ['proyectosCombobox'] });
-            handleDialogChange(false);
-            toast(isEditMode ? 'Proyecto Actualizado' : 'Proyecto Agregado');
-        },
-        onError: (error) => {
-            toast.error('Error al guardar el proyecto: ' + getApiErrorMessage(error));
-        }
-    });
+    const proyectoMutation = useSaveProyecto();
+
+    const saveMutation = {
+        isPending: proyectoMutation.isPending,
+        mutate: (payload: CreateProyecto | UpdateProyecto) =>
+            proyectoMutation.mutate(payload, {
+                onSuccess: () => {
+                    handleDialogChange(false);
+                    toast(isEditMode ? 'Proyecto Actualizado' : 'Proyecto Agregado');
+                },
+                onError: (error) => {
+                    toast.error('Error al guardar el proyecto: ' + getApiErrorMessage(error));
+                },
+            }),
+    };
 
     const handleSave = () => {
         if (nombre.trim() === '') {

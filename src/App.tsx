@@ -18,9 +18,12 @@ export default function App() {
     }
 
     async function checkLoginStatus() {
-      const { data: check } = await api.get("/check-session")
-
-      if (check.hasErrors) {
+      try {
+        // The client turns an errored envelope into a throw, so a rejected
+        // session, a 401 and a network failure all land in the same branch -
+        // previously a network error left this stuck on the spinner.
+        await api.get("/check-session")
+      } catch {
         setLoggedIn(false)
         navigate("/login")
         return

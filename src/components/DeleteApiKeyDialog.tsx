@@ -6,12 +6,11 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { ApiKey } from "@/models/ApiKey";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import { useDeleteApiKey } from "@/api/hooks";
 
 interface Props {
     apiKey: ApiKey | null;
@@ -19,27 +18,18 @@ interface Props {
 }
 
 export default function DeleteApiKeyDialog({ apiKey, onClose }: Props) {
-    const queryClient = useQueryClient();
     const isActive = apiKey?.isActive && !apiKey?.revokedAt;
-
-    const mutation = useMutation({
-        mutationFn: async (id: number) => {
-            await api.delete(`/api-keys/${id}`);
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['api-keys'] });
-            toast("API key deleted");
-            onClose();
-        },
-        onError: () => {
-            toast.error("Failed to delete API key");
-        }
-    });
+    const mutation = useDeleteApiKey();
 
     const handleDelete = () => {
-        if (apiKey) {
-            mutation.mutate(apiKey.id);
-        }
+        if (!apiKey) return;
+        mutation.mutate(apiKey.id, {
+            onSuccess: () => {
+                toast("API key deleted");
+                onClose();
+            },
+            onError: () => toast.error("Failed to delete API key"),
+        });
     };
 
     return (

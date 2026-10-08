@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 
@@ -15,7 +14,7 @@ import { Label } from '@/components/ui/label';
 import { Skeleton } from './ui/skeleton';
 import { Proyecto } from '@/models/Proyecto';
 import { Documento } from '@/models/Documento';
-import api from "@/lib/api";
+import { useProyectoGastos } from '@/api/hooks';
 
 interface ProyectoGastosProps {
     /** Always non-null: the screen renders a placeholder when nothing is selected */
@@ -28,28 +27,15 @@ const formatFecha = (d: string | null) =>
 
 export function ProyectoGastos({ proyecto, onGastoClick }: ProyectoGastosProps) {
     const { initialDate, finalDate } = proyecto;
-    const hasGastos = initialDate !== null && finalDate !== null;
 
-    const { data: gastos = [], isLoading, isFetching } = useQuery<Documento[]>({
-        queryKey: ['proyectoDocs', proyecto.id, initialDate, finalDate],
-        enabled: hasGastos,
-        queryFn: async () => {
-            const params = new URLSearchParams();
-            params.set('fk_proyecto', String(proyecto.id));
-            // initialDate/finalDate are the server-computed min/max fecha of this
-            // proyecto's gastos, so this window is an exact fit and cannot clip a
-            // row - while also overriding any default window the backend may apply.
-            params.set('fechaInicio', initialDate!);
-            params.set('fechaTermino', finalDate!);
-            // Explicit neutral values: a defaulted searchPhraseIgnoreOtherFilters=true
-            // would discard fk_proyecto and return unrelated rows.
-            params.set('searchPhrase', '');
-            params.set('searchPhraseIgnoreOtherFilters', 'false');
-
-            const { data } = await api.get(`/documentos?${params.toString()}`);
-            return data;
-        },
-    });
+    // No isFetching dim here: selecting a proyecto with nothing cached renders
+    // the skeleton below via isLoading, so isFetching would only ever fire for
+    // background revalidation - where cached rows should stay bright.
+    const { data: gastos = [], isLoading } = useProyectoGastos(
+        proyecto.id,
+        initialDate,
+        finalDate
+    );
 
     const total = gastos.reduce((acc: number, gasto: Documento) => acc + gasto.monto, 0);
 
@@ -89,7 +75,7 @@ export function ProyectoGastos({ proyecto, onGastoClick }: ProyectoGastosProps) 
                             <TableHead className="text-right">Monto</TableHead>
                         </TableRow>
                     </TableHeader>
-                    <TableBody style={{ opacity: isFetching ? 0.5 : 1, transition: 'opacity 0.2s' }}>
+                    <TableBody>
                         {isLoading ? (
                             Array.from({ length: 5 }).map((_, index) => (
                                 <TableRow key={index}>
@@ -106,8 +92,8 @@ export function ProyectoGastos({ proyecto, onGastoClick }: ProyectoGastosProps) 
                             gastos.map((gasto) => (
                                 <TableRow
                                     key={gasto.id}
-                                    onClick={() => !isFetching && onGastoClick(gasto)}
-                                    style={{ cursor: isFetching ? 'not-allowed' : 'pointer' }}
+                                    onClick={() => onGastoClick(gasto)}
+                                    style={{ cursor: 'pointer' }}
                                 >
                                     <TableCell>{gasto.fecha}</TableCell>
                                     <TableCell>{gasto.proposito}</TableCell>
