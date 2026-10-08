@@ -13,8 +13,39 @@ const DOUBLE_TAP_SCALE = 2.5;
 const DOUBLE_TAP_MS = 300;
 /** A press that travels further than this is a drag, not a tap. */
 const TAP_SLOP_PX = 10;
+/**
+ * Zoom per normalised wheel pixel, as an exponent. With the cap below, one
+ * mouse notch is at most e^0.12 ≈ 1.13x, so crossing 1 -> MAX_SCALE takes
+ * about fifteen notches instead of three.
+ */
+const WHEEL_ZOOM_RATE = 0.0012;
+/**
+ * A single wheel event never counts for more than this many pixels. `deltaY`
+ * is device- and browser-dependent - a notch is 100px in Chrome but can arrive
+ * as 120, 240 or an accelerated burst on high-resolution wheels - so without a
+ * cap the step size is whatever the mouse happens to report.
+ */
+const WHEEL_DELTA_CAP_PX = 100;
+/** Fallback px per line for `deltaMode: DOM_DELTA_LINE` (Firefox reports 3). */
+const WHEEL_LINE_HEIGHT_PX = 16;
 
 const clampScale = (s: number) => Math.min(Math.max(1, s), MAX_SCALE);
+
+/**
+ * `deltaY` in pixels, capped. Trackpads emit many small events and stay
+ * proportional (including the ctrl+wheel stream a trackpad pinch produces);
+ * only a coarse notch hits the cap.
+ */
+const normalizeWheel = (e: WheelEvent, container: HTMLElement) => {
+  const perUnit =
+    e.deltaMode === WheelEvent.DOM_DELTA_LINE
+      ? WHEEL_LINE_HEIGHT_PX
+      : e.deltaMode === WheelEvent.DOM_DELTA_PAGE
+        ? container.clientHeight
+        : 1;
+  const px = e.deltaY * perUnit;
+  return Math.min(Math.max(px, -WHEEL_DELTA_CAP_PX), WHEEL_DELTA_CAP_PX);
+};
 
 /**
  * Pan + pinch image viewer, driven entirely by pointer events so one code path
@@ -143,7 +174,7 @@ const AssetImgViewer: React.FC<AssetImgViewerProps> = ({ base64Img }) => {
       e.preventDefault();
       const from = viewRef.current;
       const focus = toLocal(e.clientX, e.clientY);
-      moveTo(from.scale * Math.exp(-e.deltaY * 0.002), focus, focus, from);
+      moveTo(from.scale * Math.exp(-normalizeWheel(e, el) * WHEEL_ZOOM_RATE), focus, focus, from);
     };
     el.addEventListener('wheel', onWheel, { passive: false });
     return () => el.removeEventListener('wheel', onWheel);
