@@ -29,12 +29,12 @@ import {
 import { toast } from 'sonner';
 import { NewAsset } from '@/components/NewAsset';
 import LoadingCircle from '@/components/LoadingCircle';
-import { Asset } from '@/models/Asset';
+import { AssetListItem } from '@/models/Asset';
 import { useAssets, useAsset, useDeleteAsset } from '@/api/hooks';
 
 const Assets = () => {
     const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
-    const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
+    const [assetToDelete, setAssetToDelete] = useState<AssetListItem | null>(null);
 
     const { data: assets = [], isLoading } = useAssets();
 

@@ -22,10 +22,9 @@ import { CirclePlus, Loader2 } from "lucide-react"
 import { useEffect, useState } from "react"
 import { DatePicker } from "./DatePicker"
 import { DateTime } from "luxon";
-import { useAppState } from "@/AppState"
 import { resizeImage } from "@/lib/resize-image";
 import { toast } from "sonner";
-import { useCreateAsset } from "@/api/hooks";
+import { useCreateAsset, useCategorias } from "@/api/hooks";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
 export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
@@ -36,7 +35,7 @@ export function NewAsset({ onAssetSaved }: { onAssetSaved?: () => void }) {
   const [fecha, setFecha] = useState<DateTime>(DateTime.now());
   const [categoria, setCategoria] = useState<number>(0);
   const [image, setImage] = useState<string>("");
-  const { categorias } = useAppState();
+  const { data: categorias = [] } = useCategorias();
 
   const handleImageUpload = async (file: File) => {
     // The accept list below lets non-images through, so check the real type

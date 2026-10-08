@@ -1,7 +1,5 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import api from "@/lib/api"
-import type { Categoria, TipoDoc } from "@/models/Catalogos"
 
 /**
  * Which shell to render. "auto" follows the viewport; the explicit values let
@@ -20,16 +18,11 @@ interface State {
     isLoggedIn: boolean
     apiPrefix: string
     sessionId: string
-    categorias: Categoria[]
-    tipoDocs: TipoDoc[]
     layoutOverride: LayoutOverride
     setLoggedIn: (isLoggedIn: boolean) => void
     setApiPrefix: (apiPrefix: string) => void
     setSessionId: (sessionId: string) => void
     setLayoutOverride: (layoutOverride: LayoutOverride) => void
-    // Async actions to fetch the data
-    fetchCategorias: () => Promise<void>
-    fetchTipoDocs: () => Promise<void>
 }
 
 export const useAppState = create<State>()(
@@ -38,31 +31,11 @@ export const useAppState = create<State>()(
             isLoggedIn: false,
             apiPrefix: DEFAULT_API_PREFIX,
             sessionId: "",
-            categorias: [],
-            tipoDocs: [],
             layoutOverride: "auto",
             setLoggedIn: (isLoggedIn: boolean) => set({ isLoggedIn }),
             setApiPrefix: (apiPrefix: string) => set({ apiPrefix }),
             setSessionId: (sessionId: string) => set({ sessionId }),
             setLayoutOverride: (layoutOverride: LayoutOverride) => set({ layoutOverride }),
-            fetchCategorias: async () => {
-                try {
-                    const { data } = await api.get<Categoria[]>("/categorias")
-                    set({ categorias: data })
-                } catch (error) {
-                    console.error("Failed to fetch categorias:", error)
-                }
-            },
-
-            // Fetch tipoDocs from your API
-            fetchTipoDocs: async () => {
-                try {
-                    const { data } = await api.get<TipoDoc[]>("/tipo-docs")
-                    set({ tipoDocs: data })
-                } catch (error) {
-                    console.error("Failed to fetch tipoDocs:", error)
-                }
-            },
         }),
         {
             name: "app-storage",

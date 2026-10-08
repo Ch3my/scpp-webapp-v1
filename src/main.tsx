@@ -9,6 +9,8 @@ import { useAppState } from "./AppState";
 import Dashboard from "./screens/Dashboard";
 import { Skeleton } from "./components/ui/skeleton";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
+import { useIsRestoring } from '@tanstack/react-query'
+import LoadingCircle from "./components/LoadingCircle";
 import "./App.css";
 import "./Custom.css";
 import { RequireAuth } from "./components/RequireAuth";
@@ -65,6 +67,7 @@ setUnauthorizedHandler(() => {
 
 const RootComponent = () => {
   const { isLoggedIn } = useAppState();
+  const isRestoring = useIsRestoring();
 
   // Prefetch FoodScreen in the background after dashboard settles
   React.useEffect(() => {
@@ -79,6 +82,21 @@ const RootComponent = () => {
     }
     return cleanup;
   }, [isLoggedIn]);
+
+  /*
+   * Hold the routes until the persisted cache is in memory. Reading IndexedDB
+   * takes a macrotask at minimum, while App.tsx's optimistic navigate to
+   * /dashboard is synchronous - so without this the dashboard mounts first and
+   * renders a frame or two of zeroes before the restored figures arrive, which
+   * on a finance screen reads as data loss rather than as loading.
+   */
+  if (isRestoring) {
+    return (
+      <div className="h-screen w-screen">
+        <LoadingCircle />
+      </div>
+    );
+  }
 
   return (
     <>

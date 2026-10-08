@@ -5,9 +5,8 @@ import { Input } from './ui/input';
 import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
-import { useAppState } from "@/AppState"
 import { toast } from "sonner"
-import { useDocumento, useSaveDocumento, useDeleteDocumento } from '@/api/hooks';
+import { useDocumento, useSaveDocumento, useDeleteDocumento, useTipoDocs } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -56,7 +55,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
-    const { tipoDocs } = useAppState()
+    const { data: tipoDocs = [] } = useTipoDocs()
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());

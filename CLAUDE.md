@@ -80,7 +80,10 @@ day boundaries.
 
 ### 3. Data layer
 
-Everything goes through `src/api/`. **No `api.get(...)` in a component — ever.**
+Everything goes through `src/api/`. **No `api.get(...)` in a component — ever.** The rule is about
+*data*; the one exception is `App.tsx`'s `/check-session`, which is a probe whose answer is never
+rendered and is worthless a moment later. Putting it behind a query would cache exactly the thing
+that must not be cached, so it calls the client directly and `queryKeys` has no `auth` entry.
 
 - `client.ts` — the axios instance. Dynamic `baseURL` from the store, bearer token, and a
   response interceptor that turns a 200-with-`{hasErrors}` envelope into a throw, so callers
@@ -93,6 +96,22 @@ Everything goes through `src/api/`. **No `api.get(...)` in a component — ever.
 
 Mutations invalidate *dependents*, not just their own list — a documento write also invalidates
 `dashboard` and `proyectos`, because proyecto date ranges are derived from linked gastos.
+
+**The Zustand store holds no server data.** `AppState.tsx` is session (`isLoggedIn`, `sessionId`,
+`apiPrefix`) and one preference (`layoutOverride`) — things with no endpoint behind them.
+Everything fetched belongs to TanStack Query, which is what gives it staleness, invalidation,
+clearing on logout and the persisted offline copy. `categorias`/`tipoDocs` used to live in the
+store *as well as* in `useLookups.ts`, fetched by hand at boot and at login while the query hooks
+sat unused; the store copy is gone and the hooks are the only source. Don't add a `fetchX` action
+to the store.
+
+**`/assets` vs `/assets/{id}`.** The list returns `AssetListItem` (no image); the detail returns
+`Asset` with `assetData`. They were one endpoint returning the full `Asset` either way, so opening
+the Assets screen downloaded every photo in the account as base64 before displaying one. Two
+response schemas rather than an optional field, so the contract says which one has the image.
+Note `assets.routes.ts` needs **both** `use('/assets', requireSession)` and
+`use('/assets/*', requireSession)` — the first matches only the exact path, and without the second
+`GET /assets/{id}` served images unauthenticated (verified: the request reached the handler).
 
 ### 4. Screens
 
@@ -265,8 +284,9 @@ off until hydration lands, so a fetch cannot resolve first and overwrite what wa
   rebuild them, reviving as `{ zone: 'utc' }` to match the hooks. **Any new query holding a
   non-JSON value needs the same treatment** — this is the trap to check first when a hydrated
   screen crashes and a fresh one does not.
-- **Asset details are excluded** (`assetData` is base64). The list persists, so the screen renders
-  offline and only the picture needs a connection.
+- **Asset details are excluded** — `GET /assets/{id}` is the only response carrying a base64 image,
+  and persisting those would re-serialise every photo opened on each save. List rows *are*
+  persisted, so the screen fills in offline and only the image needs a connection.
 - **Cleared at every session boundary**: login, logout and 401. That is what keeps one user's
   figures out of another's session, and it is why this is not in the service worker — a worker
   cache is keyed by URL, invisible to the app, and survives a logout.
@@ -276,11 +296,25 @@ off until hydration lands, so a fetch cannot resolve first and overwrite what wa
 
 **3. The boot gate — `src/App.tsx`.** This was the blocker that made the other two pointless: any
 failure of `/check-session` redirected to `/login`, which is the one screen an offline user cannot
-get past. It now separates *the server answered and rejected us* (→ login) from *we could not
-reach the server* (→ boot on the stored session, toast "Sin conexión", show the persisted cache).
-A dead session still fails on the first real request, and the 401 interceptor signs them out then.
-`navigator.onLine === false` short-circuits the request, and the call has an explicit 8 s timeout —
-without one a captive portal or a cold Railway container sits on the spinner forever.
+get past — so a transient blip on mobile data logged you out with a perfectly good session.
+
+It now boots **optimistically**: a stored `sessionId` is enough to render with, so it navigates to
+`/dashboard` immediately and verifies behind the screen. Nothing is actually trusted — an invalid
+session is a 401 from the API, and the interceptor in `api/client.ts` clears the session, drops the
+persisted cache and redirects. Showing someone their own cached figures for a few hundred ms costs
+nothing.
+
+That ordering is the whole point: `/check-session` plus the two catalog fetches used to be three
+sequential round-trips in front of the first paint, which on mobile data *is* the cold start. Now
+they overlap with the dashboard's own queries. A non-401 answer (a sick backend) leaves the user in
+the app rather than at a login screen they also cannot use; only *unreachable* raises the
+"Sin conexión" toast. `navigator.onLine === false` short-circuits, and the call has an explicit 8 s
+timeout — without one a captive portal leaves the promise pending for the life of the app.
+
+**`RootComponent` holds the routes while `useIsRestoring()` is true.** Reading IndexedDB takes a
+macrotask at minimum while the optimistic `navigate` is synchronous, so without that guard the
+dashboard mounts first and paints a frame or two of **zeroes** before the restored figures land —
+on a finance screen that reads as data loss, not as loading.
 
 **Known gap: writes.** Query's default `networkMode: 'online'` *pauses* an offline mutation and
 resumes it on reconnect, but only while the page lives — and mutations are deliberately not

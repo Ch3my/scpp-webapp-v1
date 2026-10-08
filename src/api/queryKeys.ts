@@ -19,10 +19,11 @@ export interface DocumentFilters {
 }
 
 export const queryKeys = {
-    auth: {
-        all: ['auth'] as const,
-        session: () => [...queryKeys.auth.all, 'session'] as const,
-    },
+    // No `auth` key on purpose. /check-session is a probe, not data: its answer
+    // is never rendered and is worthless a moment later, so it must not be
+    // cached - which is why App.tsx calls it through the axios client directly
+    // rather than through a query. There used to be an unused `auth.session()`
+    // key here inviting someone to wire it up.
 
     dashboard: {
         all: ['dashboard'] as const,

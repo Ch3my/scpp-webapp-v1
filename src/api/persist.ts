@@ -83,10 +83,11 @@ function shouldDehydrateQuery(query: Query) {
 
     const [domain, kind] = query.queryKey as [string?, string?];
 
-    // Asset details carry the image as base64. The quota could take them, but
-    // every one would be rewritten on each save; the list (which has no
-    // assetData) is persisted, so the screen renders offline and only the
-    // picture needs a connection.
+    // Asset *details* only: that is the one response carrying a base64 image
+    // (`GET /assets/{id}`), and persisting those would re-serialise every photo
+    // the user has opened on each save. List rows are small since the backend
+    // stopped selecting `assetData` for `GET /assets`, so the screen still
+    // fills in offline - only the image itself needs a connection.
     if (domain === 'assets' && kind === 'detail') return false;
 
     return true;

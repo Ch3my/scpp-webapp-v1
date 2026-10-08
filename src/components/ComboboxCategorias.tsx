@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { useAppState } from "@/AppState"
+import { useCategorias } from "@/api/hooks"
 
 interface ComboboxCategoriasProps {
   value: number;
@@ -26,7 +26,7 @@ interface ComboboxCategoriasProps {
 
 export function ComboboxCategorias({ value, onChange, disabled }: ComboboxCategoriasProps) {
   const [open, setOpen] = React.useState(false)
-  const { categorias } = useAppState()
+  const { data: categorias = [] } = useCategorias()
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal>

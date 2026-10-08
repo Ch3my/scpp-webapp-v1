@@ -20,9 +20,8 @@ import { cn } from '@/lib/utils';
 import DocRecord from '@/components/DocRecord';
 import { DocsFilters } from '@/components/DocsFilters';
 
-import { useAppState } from '@/AppState';
 import { Documento } from '@/models/Documento';
-import { useDocumentos, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 import { getPercentageColor } from '@/lib/percentage-color';
 import { useShellScroll } from '@/shell/ShellScroll';
 
@@ -56,7 +55,7 @@ function formatFecha(fecha: string, withYear = false) {
 }
 
 const MobileDashboard = () => {
-    const { tipoDocs } = useAppState();
+    const { data: tipoDocs = [] } = useTipoDocs();
 
     const [tab, setTab] = useState<Tab>('documentos');
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));

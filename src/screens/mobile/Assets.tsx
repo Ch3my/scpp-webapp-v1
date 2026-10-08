@@ -2,7 +2,7 @@ import { useOptimistic } from 'react';
 import { useSearchParams } from 'react-router';
 import { ArrowLeft, MoreHorizontal, Trash } from 'lucide-react';
 import { toast } from 'sonner';
-import { Asset } from '@/models/Asset';
+import { AssetListItem } from '@/models/Asset';
 import { useAssets, useAsset, useDeleteAsset } from '@/api/hooks';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,7 +38,7 @@ const MobileAssets = () => {
         (current, deletedId: number) => current.filter((a) => a.id !== deletedId)
     );
 
-    const open = (asset: Asset) => {
+    const open = (asset: AssetListItem) => {
         setSearchParams({ id: String(asset.id) });
     };
 
@@ -47,7 +47,7 @@ const MobileAssets = () => {
         setSearchParams({});
     };
 
-    const remove = (asset: Asset) => {
+    const remove = (asset: AssetListItem) => {
         if (selectedId === asset.id) close();
         removeOptimisticAsset(asset.id);
         deleteMutation.mutate(asset.id, {

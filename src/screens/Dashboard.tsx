@@ -1,7 +1,6 @@
 import { useState, useMemo, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
-import { useAppState } from "@/AppState"
-import { useDocumentos, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -40,7 +39,7 @@ const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/Expens
 
 
 const Dashboard: React.FC = () => {
-    const { tipoDocs } = useAppState()
+    const { data: tipoDocs = [] } = useTipoDocs()
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);

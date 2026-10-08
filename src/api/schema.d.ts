@@ -665,13 +665,13 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description List of assets */
+                /** @description List of assets, without the image data */
                 200: {
                     headers: {
                         [name: string]: unknown;
                     };
                     content: {
-                        "application/json": components["schemas"]["Asset"][];
+                        "application/json": components["schemas"]["AssetListItem"][];
                     };
                 };
             };
@@ -725,6 +725,44 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/assets/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get one asset including its image */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Asset with assetData */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Asset"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1321,15 +1359,24 @@ export interface components {
                 end: string;
             };
         };
-        Asset: {
+        AssetListItem: {
             id: number;
             fk_categoria: number;
             descripcion: string;
-            assetData: string;
             fecha: string;
             categoria: {
                 descripcion: string;
             };
+        };
+        Asset: {
+            id: number;
+            fk_categoria: number;
+            descripcion: string;
+            fecha: string;
+            categoria: {
+                descripcion: string;
+            };
+            assetData: string;
         };
         CreateAsset: {
             fk_categoria: number;

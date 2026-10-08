@@ -20,7 +20,7 @@ export default function Login() {
     const [user, setUser] = useState<string>("");
     const [pass, setPass] = useState<string>("");
     let navigate = useNavigate();
-    const { setSessionId, setLoggedIn, fetchCategorias, fetchTipoDocs } = useAppState()
+    const { setSessionId, setLoggedIn } = useAppState()
     const loginMutation = useLogin()
 
     const login = async () => {
@@ -35,8 +35,9 @@ export default function Login() {
             setSessionId(response.sessionHash)
             setLoggedIn(true)
 
-            await Promise.all([fetchCategorias(), fetchTipoDocs()]);
-
+            // The lookup tables the next screen needs are plain queries now
+            // (api/hooks/useLookups.ts), so they load with it instead of
+            // holding the navigation behind two more round-trips.
             navigate("/dashboard")
         } catch (error) {
             toast("Error al Iniciar Sesion", { description: getApiErrorMessage(error) })
