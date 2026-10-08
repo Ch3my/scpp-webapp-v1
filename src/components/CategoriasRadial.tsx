@@ -10,8 +10,8 @@ import { forwardRef, useImperativeHandle } from "react"
 import numeral from "numeral"
 import { Skeleton } from "./ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
-import { useQuery } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { useMemo } from "react"
+import { useExpensesByCategory } from "@/api/hooks"
 
 const chartConfig = {
     desktop: {
@@ -23,17 +23,17 @@ const chartConfig = {
 function CategoriasRadial(_props: unknown, ref: React.Ref<unknown>) {
     const fechaInicio = DateTime.now();
 
-    const { data: chartData = [], isLoading, refetch } = useQuery({
-        queryKey: ['dashboard', 'categorias-radial'],
-        queryFn: async () => {
-            const { data: result } = await api.get("/expenses-by-category?nMonths=0");
-            return result.data.slice(0, 6).map((item: any) => ({
-                category: item.label,
-                amount: item.data,
-                catId: item.catId,
-            }));
-        },
-    });
+    // nMonths=0 means the current month only
+    const { data: result, isLoading, refetch } = useExpensesByCategory(0);
+
+    const chartData = useMemo(
+        () => (result?.data ?? []).slice(0, 6).map((item) => ({
+            category: item.label,
+            amount: item.data,
+            catId: item.catId,
+        })),
+        [result]
+    );
 
     // Keep ref for backwards compatibility
     useImperativeHandle(ref, () => ({

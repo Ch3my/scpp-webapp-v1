@@ -1,29 +1,17 @@
-export type Proyecto = {
-    id: number;
-    nombre: string;
-    descripcion: string | null;
-    orden?: number;
-    /** Reference-only status flag, never restricts any action */
-    activo: boolean;
-    /** 'yyyy-MM-dd' - earliest fecha among linked gastos. Server-computed, read-only. */
-    initialDate: string | null;
-    /** 'yyyy-MM-dd' - latest fecha among linked gastos. Server-computed, read-only. */
-    finalDate: string | null;
-}
+import type { components } from "@/api/schema";
 
-export type CreateProyecto = {
-    nombre: string;
-    descripcion?: string | null;
-    orden?: number;
-    /** Defaults to true on the backend if omitted */
-    activo?: boolean;
-}
+/**
+ * Generated from the backend OpenAPI spec. Refresh with `npm run gen:api`.
+ *
+ * Field notes the spec does not carry:
+ * - `activo` is a reference-only status flag; it never restricts any action.
+ * - `initialDate` / `finalDate` are 'yyyy-MM-dd', the earliest and latest
+ *   `fecha` among linked gastos. Server-computed, read-only.
+ */
+export type Proyecto = components["schemas"]["Proyecto"];
 
-export type UpdateProyecto = {
-    id: number;
-    nombre: string;
-    descripcion?: string | null;
-    orden?: number;
-    /** Required: PUT is a full replace, not a partial patch */
-    activo: boolean;
-}
+/** `activo` defaults to true on the backend when omitted. */
+export type CreateProyecto = components["schemas"]["CreateProyecto"];
+
+/** PUT is a full replace, not a partial patch - `activo` is required. */
+export type UpdateProyecto = components["schemas"]["UpdateProyecto"];

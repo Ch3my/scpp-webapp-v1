@@ -9,9 +9,8 @@ import {
 } from "@/components/ui/dialog";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { Proyecto } from "@/models/Proyecto";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import api from "@/lib/api";
+import { useDeleteProyecto } from "@/api/hooks";
 import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
@@ -22,31 +21,24 @@ interface Props {
 }
 
 export default function DeleteProyectoDialog({ proyecto, onClose, onDeleted }: Props) {
-    const queryClient = useQueryClient();
+    // The hook invalidates proyectos and the documento lists - deleting a
+    // proyecto stales the resolved doc.proyecto of every linked gasto.
+    const deleteMutation = useDeleteProyecto();
 
-    const mutation = useMutation({
-        mutationFn: async (id: number) => {
-            const { data } = await api.delete("/proyectos", { data: { id } });
-            if (data?.hasErrors) {
-                throw new Error(data.errorDescription[0]);
-            }
-            return id;
-        },
-        onSuccess: (deletedId: number) => {
-            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
-            queryClient.invalidateQueries({ queryKey: ['proyectosCombobox'] });
-            queryClient.invalidateQueries({ queryKey: ['proyectoDocs'] });
-            // The resolved doc.proyecto / fk_proyecto of every linked gasto went stale
-            queryClient.invalidateQueries({ queryKey: ['docs'] });
-            queryClient.invalidateQueries({ queryKey: ['doc'] });
-            onDeleted(deletedId);
-            toast('Proyecto Eliminado');
-            onClose();
-        },
-        onError: (error) => {
-            toast.error('Error al eliminar el proyecto: ' + getApiErrorMessage(error));
-        }
-    });
+    const mutation = {
+        isPending: deleteMutation.isPending,
+        mutate: (id: number) =>
+            deleteMutation.mutate(id, {
+                onSuccess: (deletedId) => {
+                    onDeleted(deletedId);
+                    toast('Proyecto Eliminado');
+                    onClose();
+                },
+                onError: (error) => {
+                    toast.error('Error al eliminar el proyecto: ' + getApiErrorMessage(error));
+                },
+            }),
+    };
 
     const handleDelete = () => {
         if (proyecto) {

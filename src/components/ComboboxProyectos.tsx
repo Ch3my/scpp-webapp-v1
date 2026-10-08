@@ -1,6 +1,5 @@
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
-import { useQuery } from '@tanstack/react-query';
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,7 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Proyecto } from "@/models/Proyecto"
-import api from "@/lib/api";
+import { useProyectos } from "@/api/hooks";
 
 interface ComboboxProyectosProps {
   /** 0 means "sin proyecto" */
@@ -30,14 +29,10 @@ interface ComboboxProyectosProps {
 export function ComboboxProyectos({ value, onChange, disabled }: ComboboxProyectosProps) {
   const [open, setOpen] = React.useState(false)
 
-  // Own query key so a picker inside a dialog never fights the Proyectos screen's list query
-  const { data: proyectos = [] } = useQuery<Proyecto[]>({
-    queryKey: ['proyectosCombobox'],
-    queryFn: async () => {
-      const { data } = await api.get("/proyectos");
-      return data;
-    }
-  });
+  // Shares the Proyectos screen's cache entry. Two useQuery calls on one key
+  // dedupe rather than conflict, and a single key means a write invalidates
+  // both at once instead of having to name each one.
+  const { data: proyectos = [] } = useProyectos();
 
   const selected = proyectos.find((p) => p.id === value) ?? null;
 

@@ -14,8 +14,7 @@ import { Label } from "@/components/ui/label"
 import { CirclePlus, Loader2 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { toast } from "sonner"
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import api from "@/lib/api"
+import { useFoodItem, useSaveFoodItem } from "@/api/hooks"
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
@@ -31,7 +30,6 @@ interface FoodItemPayload {
 }
 
 const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, id, hideButton = false }) => {
-    const queryClient = useQueryClient();
     const [nombre, setNombre] = useState<string>("");
     const [unit, setUnit] = useState<string>("");
     const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState<boolean>(false);
@@ -39,30 +37,17 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
     const isEditing = !!id;
 
     // Fetch food item data if ID is provided
+    const { data: foodItem, isError } = useFoodItem(isOpen && id ? id : 0);
+
     useEffect(() => {
-        const fetchFoodItem = async () => {
-            if (id) {
-                if (id > 0 && isOpen) {
-                    try {
-                        const { data } = await api.get(`/food/items?id[]=${id}`);
+        if (!foodItem) return;
+        setNombre(foodItem.name || "");
+        setUnit(foodItem.unit || "");
+    }, [foodItem]);
 
-                        if (data && data.length > 0) {
-                            const item = data[0];
-                            setNombre(item.name || "");
-                            setUnit(item.unit || "");
-                        } else {
-                            toast.error("No se encontró el producto");
-                        }
-                    } catch (error) {
-                        console.error("Error fetching food item:", error);
-                        toast.error("Error al cargar el producto");
-                    }
-                }
-            }
-        };
-
-        fetchFoodItem();
-    }, [id, isOpen]);
+    useEffect(() => {
+        if (isError) toast.error("Error al cargar el producto");
+    }, [isError]);
 
     const handleDialogChange = (open: boolean) => {
         onOpenChange?.(open);
@@ -71,23 +56,23 @@ const FoodItemRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpe
         }
     };
 
-    const mutation = useMutation({
-        mutationFn: async (payload: FoodItemPayload) => {
-            const method = isEditing ? 'put' : 'post';
-            const { data } = await api[method]("/food/item", payload);
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            toast(isEditing ? "Producto actualizado" : "Producto guardado");
-            handleDialogChange(false);
-            setNombre("");
-            setUnit("");
-        },
-        onError: () => {
-            toast.error(isEditing ? "Error al actualizar el producto" : "Error al guardar el producto");
-        }
-    });
+    const saveMutation = useSaveFoodItem();
+
+    const mutation = {
+        isPending: saveMutation.isPending,
+        mutate: (payload: FoodItemPayload) =>
+            saveMutation.mutate({ payload, isEdit: isEditing }, {
+                onSuccess: () => {
+                    toast(isEditing ? "Producto actualizado" : "Producto guardado");
+                    handleDialogChange(false);
+                    setNombre("");
+                    setUnit("");
+                },
+                onError: () => {
+                    toast.error(isEditing ? "Error al actualizar el producto" : "Error al guardar el producto");
+                },
+            }),
+    };
 
     const handleSave = () => {
         if (nombre == "") {

@@ -14,13 +14,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Food } from "@/models/Food"
 import { columns } from "@/table-columns-def/food-summary-columns"
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { DateTime } from 'luxon';
 import { toast } from 'sonner';
 import { Skeleton } from './ui/skeleton';
-import api from "@/lib/api";
+import { useFoodItemQuantity, useDeleteFoodItem } from "@/api/hooks";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface FoodSummaryProps {
     onEditFoodItem: (id: number) => void;
@@ -30,40 +28,18 @@ interface FoodSummaryProps {
 }
 
 export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFilter, onViewDetail }: FoodSummaryProps) {
-    const queryClient = useQueryClient();
     const [sorting, setSorting] = React.useState<SortingState>([{ id: 'name', desc: false }])
 
-    const { data: foods = [], isLoading } = useQuery<Food[]>({
-        queryKey: ['foods'],
-        queryFn: async () => {
-            const { data: apiData } = await api.get("/food/item-quantity");
+    const { data: foods = [], isLoading } = useFoodItemQuantity();
 
-            const transformedData = apiData.map((item: any) => ({
-                id: item.id,
-                name: item.name,
-                unit: item.unit,
-                quantity: item.quantity,
-                lastTransactionAt: item.last_transaction_at ? DateTime.fromISO(item.last_transaction_at) : null
-            }));
-            return transformedData;
-        }
-    });
+    const deleteMutation = useDeleteFoodItem();
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            const { data } = await api.delete("/food/item", { data: { id } });
-            if (data.hasErrors) {
-                throw new Error(data.errorDescription[0]);
-            }
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            toast('Item eliminado');
-        },
-        onError: (error) => {
-            toast.error('Error al eliminar el item: ' + error.message);
-        }
-    })
+    const deleteFoodItem = (id: number) => {
+        deleteMutation.mutate(id, {
+            onSuccess: () => toast('Item eliminado'),
+            onError: (error) => toast.error('Error al eliminar el item: ' + getApiErrorMessage(error)),
+        });
+    };
 
     const filteredFoods = React.useMemo(() =>
         foodItemIdFilter === 0 ? foods : foods.filter(f => f.id === foodItemIdFilter),
@@ -79,7 +55,7 @@ export function FoodSummary({ onEditFoodItem, onOpenFoodItemDialog, foodItemIdFi
             sorting,
         },
         meta: {
-            deleteFoodItem: (id: number) => deleteMutation.mutate(id),
+            deleteFoodItem,
             editFoodItem: (id: number) => {
                 onEditFoodItem(id);
                 onOpenFoodItemDialog(true);

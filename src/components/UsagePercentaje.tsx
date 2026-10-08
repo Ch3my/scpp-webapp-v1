@@ -2,8 +2,10 @@ import React, { useState, useEffect, forwardRef, useImperativeHandle, useRef } f
 import numeral from 'numeral';
 import { Skeleton } from './ui/skeleton';
 import { Card, CardContent, CardHeader } from './ui/card';
-import { useQuery } from '@tanstack/react-query';
-import api from "@/lib/api";
+import { useMemo } from 'react';
+import { useCurrMonthSpending, type CurrentMonthSpendingResponse } from '@/api/hooks';
+
+type TopGasto = CurrentMonthSpendingResponse['topGastos'][number];
 
 const OKLCH_GREEN_600 = { l: 62.7, c: 0.194, h: 149.214 };
 const OKLCH_RED_600 = { l: 57.7, c: 0.245, h: 27.325 };
@@ -23,31 +25,30 @@ const getPercentageColor = (percent: number) => {
 
 
 function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
-    const [topGastos, setTopGastos] = useState<any[]>([]);
+    const [topGastos, setTopGastos] = useState<TopGasto[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const { data, isLoading, refetch } = useQuery({
-        queryKey: ['dashboard', 'usage-percentage'],
-        queryFn: async () => {
-            const { data: result } = await api.get("/curr-month-spending");
+    const { data: result, isLoading, refetch } = useCurrMonthSpending();
 
-            const gasto = result.data.find((o: any) => o.fk_tipoDoc == 1);
-            const ingresos = result.data.find((o: any) => o.fk_tipoDoc == 3);
+    const data = useMemo(() => {
+        if (!result) return null;
 
-            if (!gasto || !ingresos) {
-                return null;
-            }
+        const gasto = result.data.find((o) => o.fk_tipoDoc === 1);
+        const ingresos = result.data.find((o) => o.fk_tipoDoc === 3);
 
-            return {
-                percentage: result.porcentajeUsado,
-                thisMonthIngresos: ingresos.sumMonto,
-                thisMonthGastos: gasto.sumMonto,
-                thisRemanente: ingresos.sumMonto - gasto.sumMonto,
-                allTopGastos: result.topGastos,
-            };
-        },
-    });
+        if (!gasto || !ingresos) {
+            return null;
+        }
+
+        return {
+            percentage: result.porcentajeUsado,
+            thisMonthIngresos: ingresos.sumMonto,
+            thisMonthGastos: gasto.sumMonto,
+            thisRemanente: ingresos.sumMonto - gasto.sumMonto,
+            allTopGastos: result.topGastos,
+        };
+    }, [result]);
 
     const percentage = data?.percentage ?? 0;
     const thisMonthIngresos = data?.thisMonthIngresos ?? 0;

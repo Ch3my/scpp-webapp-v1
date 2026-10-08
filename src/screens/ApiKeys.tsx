@@ -3,9 +3,8 @@ import ScreenTitle from '@/components/ScreenTitle';
 import { CreateApiKeyDialog } from '@/components/CreateApiKeyDialog';
 import RevokeApiKeyDialog from '@/components/RevokeApiKeyDialog';
 import DeleteApiKeyDialog from '@/components/DeleteApiKeyDialog';
-import { useQuery } from '@tanstack/react-query';
-import { ApiKey, ApiKeysListResponse } from '@/models/ApiKey';
-import api from '@/lib/api';
+import { ApiKey } from '@/models/ApiKey';
+import { useApiKeys } from '@/api/hooks';
 import {
     flexRender,
     useTable,
@@ -27,13 +26,7 @@ const ApiKeys = () => {
     const [keyToRevoke, setKeyToRevoke] = useState<ApiKey | null>(null);
     const [keyToDelete, setKeyToDelete] = useState<ApiKey | null>(null);
 
-    const { data: apiKeys = [], isLoading } = useQuery<ApiKey[]>({
-        queryKey: ['api-keys'],
-        queryFn: async () => {
-            const { data } = await api.get<ApiKeysListResponse>("/api-keys");
-            return data.apiKeys;
-        }
-    });
+    const { data: apiKeys = [], isLoading } = useApiKeys();
 
     const table = useTable({
         features: tableFeaturesConfig,

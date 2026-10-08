@@ -1,6 +1,5 @@
 import { useState, useMemo, useEffect, useTransition, useDeferredValue } from 'react';
 import { CirclePlus, ListRestart } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,7 +22,7 @@ import DocRecord from '@/components/DocRecord';
 
 import { Proyecto } from '@/models/Proyecto';
 import { Documento } from '@/models/Documento';
-import api from '@/lib/api';
+import { useProyectos } from '@/api/hooks';
 
 type StatusFilter = 'todos' | 'activos' | 'inactivos';
 
@@ -42,13 +41,7 @@ const Proyectos = () => {
     // Keeps typing fluid
     const deferredNombreFilter = useDeferredValue(nombreFilter);
 
-    const { data: proyectos = [], isLoading } = useQuery<Proyecto[]>({
-        queryKey: ['proyectos'],
-        queryFn: async () => {
-            const { data } = await api.get("/proyectos");
-            return data;
-        }
-    });
+    const { data: proyectos = [], isLoading } = useProyectos();
 
     const visibleProyectos = useMemo(() => {
         const needle = deferredNombreFilter.trim().toLowerCase();

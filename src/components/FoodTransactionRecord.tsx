@@ -18,10 +18,14 @@ import { toast } from "sonner";
 import { DatePickerInput } from "./DatePickerInput";
 import { ComboboxAlimentos } from "./ComboboxAlimentos";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { FoodTransaction } from "@/models/FoodTransaction";
 import { Badge } from "@/components/ui/badge";
-import api from "@/lib/api";
+import {
+    useFoodTransaction,
+    useUsedTransactionCodes,
+    useSaveFoodTransaction,
+} from "@/api/hooks";
+import { getApiErrorMessage } from "@/lib/api-errors";
 
 interface Props {
     onOpenChange?: (isOpen: boolean) => void;
@@ -32,7 +36,6 @@ interface Props {
 }
 
 const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controlledIsOpen, hideButton, initialData }) => {
-    const queryClient = useQueryClient();
     const [codigo, setCodigo] = useState<string>("");
     const [itemId, setItemId] = useState<number>(0);
     const [cantidad, setCantidad] = useState<number>(1);
@@ -45,43 +48,13 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
     const isEditMode = !!initialData;
 
     // Fetch fresh data in background to ensure we have latest version
-    const { data: freshData } = useQuery<FoodTransaction>({
-        queryKey: ['transaction', initialData?.id],
-        queryFn: async () => {
-            const { data } = await api.get(`/food/transaction?id=${initialData!.id}`);
-            const item = data[0];
-            return {
-                id: item.id,
-                itemId: item.item_id,
-                changeQty: item.change_qty,
-                transactionType: item.transaction_type,
-                occurredAt: DateTime.fromISO(item.occurred_at),
-                note: item.note,
-                code: item.code,
-                bestBefore: item.best_before ? DateTime.fromISO(item.best_before) : null,
-                food: undefined,
-                remainingQuantity: item.remaining_quantity,
-                fkTransaction: item.fk_transaction
-            };
-        },
-        enabled: isOpen && !!initialData,
-        staleTime: 0,
-    });
+    const { data: freshData } = useFoodTransaction(initialData?.id, isOpen && !!initialData);
 
     // Use fresh data if available, otherwise use initialData
     const transactionData = freshData ?? initialData;
 
     // Codigos ya usados, para sugerir el menor numero disponible al crear
-    const { data: codigosUsados = [] } = useQuery<string[]>({
-        queryKey: ['transactions', 'codes'],
-        queryFn: async () => {
-            const { data } = await api.get('/food/transaction?page=1');
-            return (data as any[])
-                .map((item) => (item.code ?? "").toString().trim())
-                .filter((code: string) => code !== "");
-        },
-        enabled: isOpen && !isEditMode,
-    });
+    const { data: codigosUsados = [] } = useUsedTransactionCodes(isOpen && !isEditMode);
 
     const codigoSugerido = useMemo(() => {
         // Si algun codigo tiene letras no se puede sugerir un numero
@@ -103,8 +76,10 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
                 setItemId(transactionData.itemId);
                 setCantidad(transactionData.changeQty);
                 setAccion(transactionData.transactionType);
-                setCodigo(transactionData.code);
-                setNotas(transactionData.note);
+                // Both are nullable on the wire; these back controlled inputs,
+                // so null would flip them to uncontrolled.
+                setCodigo(transactionData.code ?? "");
+                setNotas(transactionData.note ?? "");
                 if (transactionData.bestBefore) {
                     setBestBefore(transactionData.bestBefore);
                 }
@@ -114,27 +89,20 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
         }
     }, [isOpen, transactionData]);
 
-    const mutation = useMutation({
-        mutationFn: async (payload: any) => {
-            const method = isEditMode ? 'put' : 'post';
-            const { data: response } = await api[method]("/food/transaction", payload);
+    const mutation = useSaveFoodTransaction();
 
-            if (response.hasErrors) {
-                throw new Error(response.errorDescription[0]);
-            }
-            return response;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions'] });
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            toast("Transacción guardada")
-            handleDialogChange(false);
-            clearInputs()
-        },
-        onError: (error: Error) => {
-            toast("Error al guardar la transacción " + error.message)
-        }
-    })
+    const save = (payload: unknown) => {
+        mutation.mutate({ payload, isEdit: isEditMode }, {
+            onSuccess: () => {
+                toast("Transacción guardada")
+                handleDialogChange(false);
+                clearInputs()
+            },
+            onError: (error) => {
+                toast("Error al guardar la transacción " + getApiErrorMessage(error))
+            },
+        });
+    };
 
     const handleSave = () => {
         if (cantidad == 0) {
@@ -161,7 +129,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
         if (isEditMode) {
             payload.id = initialData!.id;
         }
-        mutation.mutate(payload);
+        save(payload);
     }
 
     const clearInputs = () => {

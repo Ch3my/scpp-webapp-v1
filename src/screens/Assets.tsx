@@ -1,6 +1,5 @@
-import { useTransition, useOptimistic, useState, type MouseEvent } from 'react';
+import { useOptimistic, useState, type MouseEvent } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
-import api from "@/lib/api";
 
 import AssetImgViewer from '@/components/AssetImgViewer';
 import { Button } from "@/components/ui/button"
@@ -30,24 +29,20 @@ import {
 import { toast } from 'sonner';
 import { NewAsset } from '@/components/NewAsset';
 import LoadingCircle from '@/components/LoadingCircle';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Asset } from '@/models/Asset';
+import { useAssets, useAsset, useDeleteAsset } from '@/api/hooks';
 
 const Assets = () => {
-    const queryClient = useQueryClient();
-    const [base64Img, setBase64Img] = useState("");
+    const [selectedAssetId, setSelectedAssetId] = useState<number | null>(null);
     const [assetToDelete, setAssetToDelete] = useState<Asset | null>(null);
 
-    // useTransition for image fetching
-    const [isLoadingAsset, startAssetTransition] = useTransition();
+    const { data: assets = [], isLoading } = useAssets();
 
-    const { data: assets = [], isLoading } = useQuery<Asset[]>({
-        queryKey: ['assets'],
-        queryFn: async () => {
-            const { data } = await api.get("/assets");
-            return data;
-        }
-    });
+    // Cached per asset, so going back to one already viewed is instant.
+    // isLoading, not isFetching: the latter is also true when a cached image is
+    // revalidated in the background, which would swap the picture for a spinner.
+    const { data: selectedAsset, isLoading: isLoadingAsset } = useAsset(selectedAssetId);
+    const base64Img = selectedAsset?.assetData ?? "";
 
     // useOptimistic for immediate UI feedback on delete
     const [optimisticAssets, removeOptimisticAsset] = useOptimistic(
@@ -55,37 +50,24 @@ const Assets = () => {
         (currentAssets, deletedId: number) => currentAssets.filter(a => a.id !== deletedId)
     );
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            await api.delete("/assets", { data: { id } });
-        },
-        onSuccess: () => {
-            toast('Documento Eliminado');
-            queryClient.invalidateQueries({ queryKey: ['assets'] });
-        },
-        onError: () => {
-            toast.error('Error al eliminar');
-            queryClient.invalidateQueries({ queryKey: ['assets'] });
-        }
-    });
+    const deleteMutation = useDeleteAsset();
 
     const handleRowClick = (id: number, e: MouseEvent) => {
         if ((e.target as HTMLElement).textContent === "Eliminar") {
             return;
         }
-
-        startAssetTransition(async () => {
-            const { data } = await api.get(`/assets?id[]=${id}`);
-            setBase64Img(data[0].assetData);
-        });
+        setSelectedAssetId(id);
     };
 
     const confirmDelete = () => {
         if (!assetToDelete) return;
 
-        setBase64Img("");
+        setSelectedAssetId(null);
         removeOptimisticAsset(assetToDelete.id);
-        deleteMutation.mutate(assetToDelete.id);
+        deleteMutation.mutate(assetToDelete.id, {
+            onSuccess: () => toast('Documento Eliminado'),
+            onError: () => toast.error('Error al eliminar'),
+        });
         setAssetToDelete(null);
     };
 
@@ -95,7 +77,8 @@ const Assets = () => {
                 <ScreenTitle title='Assets' />
                 <div>
                     <div className='px-1'>
-                        <NewAsset onAssetSaved={() => queryClient.invalidateQueries({ queryKey: ['assets'] })} />
+                        {/* The create hook invalidates the assets list itself */}
+                        <NewAsset />
                     </div>
                     <Table size='compact'>
                         <TableHeader>

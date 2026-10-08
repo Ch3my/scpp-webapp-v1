@@ -7,8 +7,7 @@ import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { useAppState } from "@/AppState"
 import { toast } from "sonner"
-import { useQueryClient, useMutation, useQuery } from '@tanstack/react-query';
-import api from "@/lib/api";
+import { useDocumento, useSaveDocumento, useDeleteDocumento } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -58,7 +57,6 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
     const { tipoDocs } = useAppState()
-    const queryClient = useQueryClient();
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
@@ -72,15 +70,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const splitEnCuotas = !isEditMode && cuotas >= 2;
 
     // Fetch fresh data in background to ensure we have latest version
-    const { data: freshData } = useQuery<Documento>({
-        queryKey: ['doc', initialData?.id],
-        queryFn: async () => {
-            const { data } = await api.get(`/documentos?id[]=${initialData!.id}`);
-            return data[0];
-        },
-        enabled: isOpen && !!initialData,
-        staleTime: 0,
-    });
+    const { data: freshData } = useDocumento(initialData?.id, isOpen && !!initialData);
 
     // Use fresh data if available, otherwise use initialData
     const docData = freshData ?? initialData;
@@ -113,50 +103,37 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // a gasto: the panel only unmounts, so toggling the tipo away and back brings the
     // original classification with it. handleSave already sends null for other tipos.
 
-    const deleteMutation = useMutation({
-        mutationFn: async () => {
-            const { data } = await api.delete("/documentos", { data: { id: initialData?.id } });
-            return data;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['docs'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            // initialDate/finalDate are derived from the linked gastos
-            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
-            queryClient.invalidateQueries({ queryKey: ['proyectoDocs'] });
-            handleDialogChange(false);
-            toast('Documento Eliminado');
-        },
-        onError: () => {
-            toast('Error al eliminar documento');
-        }
-    });
+    // Both hooks invalidate documentos + dashboard + proyectos. Invalidating the
+    // whole documentos tree covers the dashboard list and every proyecto pane, so a
+    // gasto moving between proyectos needs no tracking of its previous value.
+    const docDeleteMutation = useDeleteDocumento();
+    const docSaveMutation = useSaveDocumento();
 
-    const saveMutation = useMutation({
-        mutationFn: async (payload: any) => {
-            if (Array.isArray(payload)) {
-                const results = await Promise.all(payload.map((p: any) => api.post("/documentos", p)));
-                return results.map(r => r.data);
-            }
-            const method = isEditMode ? 'put' : 'post';
-            const { data } = await api[method]("/documentos", payload);
-            return data;
+    const deleteMutation = {
+        isPending: docDeleteMutation.isPending,
+        mutate: () => {
+            if (!initialData) return;
+            docDeleteMutation.mutate(initialData.id, {
+                onSuccess: () => {
+                    handleDialogChange(false);
+                    toast('Documento Eliminado');
+                },
+                onError: () => toast('Error al eliminar documento'),
+            });
         },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['docs'] });
-            queryClient.invalidateQueries({ queryKey: ['dashboard'] });
-            // initialDate/finalDate are derived from the linked gastos. The bare
-            // 'proyectoDocs' prefix covers both the pane the gasto left and the one
-            // it joined, so a reassignment needs no tracking of the previous value.
-            queryClient.invalidateQueries({ queryKey: ['proyectos'] });
-            queryClient.invalidateQueries({ queryKey: ['proyectoDocs'] });
-            handleDialogChange(false);
-            toast(isEditMode ? 'Documento Actualizado' : 'Documento Agregado');
-        },
-        onError: () => {
-            toast('Error al guardar documento');
-        }
-    });
+    };
+
+    const saveMutation = {
+        isPending: docSaveMutation.isPending,
+        mutate: (payload: unknown) =>
+            docSaveMutation.mutate({ payload, isEdit: isEditMode }, {
+                onSuccess: () => {
+                    handleDialogChange(false);
+                    toast(isEditMode ? 'Documento Actualizado' : 'Documento Agregado');
+                },
+                onError: () => toast('Error al guardar documento'),
+            }),
+    };
 
     const handleSave = () => {
         if (tipoDoc == 0) {

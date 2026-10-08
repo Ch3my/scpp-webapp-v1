@@ -1,8 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useState } from 'react';
 
 import { FoodTransaction } from '@/models/FoodTransaction';
-import api from "@/lib/api";
-import { DateTime } from 'luxon';
 import {
     ColumnFiltersState,
     flexRender,
@@ -20,8 +18,13 @@ import {
 } from "@/components/ui/table"
 import { toast } from 'sonner';
 import { columns } from '@/table-columns-def/food-transactions-columns';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from './ui/skeleton';
+import {
+    useFoodTransactions,
+    useDeleteFoodTransaction,
+    useAdjustTransactionQty,
+} from '@/api/hooks';
+import { getApiErrorMessage } from '@/lib/api-errors';
 
 export interface FoodTransactionsRef {
     refetch: () => void;
@@ -34,83 +37,33 @@ interface FoodTransactionsProps {
 }
 
 const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(({ onTransactionEdit, foodItemIdFilter, codeFilter }, ref) => {
-    const queryClient = useQueryClient();
     const [sorting, setSorting] = useState<SortingState>([{ id: 'bestBefore', desc: false }]);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(
         []
     )
 
-    const { data: transactions = [], isLoading, refetch } = useQuery<FoodTransaction[]>({
-        queryKey: ['transactions', foodItemIdFilter],
-        queryFn: async () => {
-            const params = new URLSearchParams({ page: '1' });
-            if (foodItemIdFilter !== 0) params.set('itemId', String(foodItemIdFilter));
-            const { data: apiData } = await api.get(`/food/transaction?${params}`);
-
-            return apiData.map((item: any) => {
-                let food = {
-                    id: item.item_id,
-                    name: item.item_name,
-                    unit: item.item_unit,
-                    quantity: null,
-                    lastTransactionAt: null
-                }
-                return {
-                    id: item.id,
-                    itemId: item.item_id,
-                    changeQty: item.change_qty,
-                    occurredAt: DateTime.fromISO(item.occurred_at, { zone: 'utc' }),
-                    transactionType: item.transaction_type,
-                    note: item.note,
-                    code: item.code,
-                    bestBefore: item.best_before ? DateTime.fromISO(item.best_before, { zone: 'utc' }) : null,
-                    food: food,
-                    remainingQuantity: item.remaining_quantity,
-                    fkTransaction: item.fk_transaction
-                }
-            });
-        }
-    });
+    const { data: transactions = [], isLoading, refetch } = useFoodTransactions(foodItemIdFilter);
 
     useImperativeHandle(ref, () => ({
         refetch
     }));
 
-    const deleteMutation = useMutation({
-        mutationFn: async (id: number) => {
-            const { data: response } = await api.delete("/food/transaction", { data: { id } });
-            if (response.hasErrors) {
-                throw new Error(response.errorDescription[0]);
-            }
-            return response;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            toast('Transacción eliminada');
-        },
-        onError: (error: Error) => {
-            toast("Error al guardar la transacción " + error.message)
-        }
-    })
+    const deleteMutation = useDeleteFoodTransaction();
+    const subtractOneMutation = useAdjustTransactionQty();
 
-    const subtractOneMutation = useMutation({
-        mutationFn: async ({ id, changeQty }: { id: number; changeQty: number }) => {
-            const { data: response } = await api.put("/food/transaction", { id, quantity: changeQty });
-            if (response.hasErrors) {
-                throw new Error(response.errorDescription[0]);
-            }
-            return response;
-        },
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['transactions', foodItemIdFilter] });
-            queryClient.invalidateQueries({ queryKey: ['foods'] });
-            toast('Cantidad actualizada');
-        },
-        onError: (error: Error) => {
-            toast("Error al guardar la transacción " + error.message)
-        }
-    })
+    const onTransactionDeleted = (id: number) => {
+        deleteMutation.mutate(id, {
+            onSuccess: () => toast('Transacción eliminada'),
+            onError: (error) => toast("Error al guardar la transacción " + getApiErrorMessage(error)),
+        });
+    };
+
+    const onTransactionSubtractOne = (id: number, changeQty: number) => {
+        subtractOneMutation.mutate({ id, changeQty }, {
+            onSuccess: () => toast('Cantidad actualizada'),
+            onError: (error) => toast("Error al guardar la transacción " + getApiErrorMessage(error)),
+        });
+    };
 
     const table = useTable({
         features: tableFeaturesConfig,
@@ -123,9 +76,9 @@ const FoodTransactions = forwardRef<FoodTransactionsRef, FoodTransactionsProps>(
             columnFilters,
         },
         meta: {
-            onTransactionDeleted: (id: number) => deleteMutation.mutate(id),
+            onTransactionDeleted,
             onTransactionEdit: onTransactionEdit,
-            onTransactionSubtractOne: (id: number, changeQty: number) => subtractOneMutation.mutate({ id, changeQty })
+            onTransactionSubtractOne
         }
     })
 

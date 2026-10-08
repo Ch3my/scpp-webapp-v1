@@ -12,25 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import numeral from "numeral";
-import { useQuery } from "@tanstack/react-query";
-import api from "@/lib/api";
+import { useExpensesByCategoryTimeseries } from "@/api/hooks";
 
 Settings.defaultLocale = "es";
-
-interface CategoryDataset {
-    label: string;
-    categoryId: number;
-    data: number[];
-}
-
-interface ExpensesByCategoryResponse {
-    labels: string[];
-    datasets: CategoryDataset[];
-    range: {
-        start: string;
-        end: string;
-    };
-}
 
 const CHART_COLORS = [
     "var(--chart-1)",
@@ -49,13 +33,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
     const [activeChart, setActiveChart] = useState<string>("")
     const [nMonths, setNMonths] = useState<number>(9)
 
-    const { data: expensesData, isLoading, refetch } = useQuery<ExpensesByCategoryResponse>({
-        queryKey: ['dashboard', 'expenses-by-category-timeseries', nMonths],
-        queryFn: async () => {
-            const { data } = await api.get(`/expenses-by-category-timeseries?nMonths=${nMonths}`);
-            return data;
-        },
-    });
+    const { data: expensesData, isLoading, refetch } = useExpensesByCategoryTimeseries(nMonths);
 
     const safeExpensesData = expensesData ?? { labels: [], datasets: [], range: { start: "", end: "" } };
 

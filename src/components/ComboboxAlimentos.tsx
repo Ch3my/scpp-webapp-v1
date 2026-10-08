@@ -17,10 +17,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import { Food } from "@/models/Food"
-import { useQuery } from '@tanstack/react-query';
-
-import { DateTime } from 'luxon';
-import api from "@/lib/api";
+import { useFoodItemQuantity } from "@/api/hooks";
 
 interface ComboboxAlimentosProps {
   value: number;
@@ -45,21 +42,9 @@ export function ComboboxAlimentos({
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setOpen = onOpenChange || setInternalOpen;
 
-  const { data: foods = [] } = useQuery<Food[]>({
-    queryKey: ['foodsCombobox'], // Use a different query key to avoid conflicts
-    queryFn: async () => {
-      const { data: apiData } = await api.get("/food/item-quantity");
-
-      const transformedData = apiData.map((item: any) => ({
-        id: item.id,
-        name: item.name,
-        unit: item.unit,
-        quantity: item.quantity,
-        lastTransactionAt: item.last_transaction_at ? DateTime.fromISO(item.last_transaction_at) : null
-      }));
-      return transformedData;
-    }
-  });
+  // Shares FoodSummary's cache entry - this used to be a second request for
+  // the same endpoint under a separate key.
+  const { data: foods = [] } = useFoodItemQuantity();
 
   const allFoods = hideTodos ? foods : [{ id: 0, name: "(Todos)" } as Food, ...foods];
 
