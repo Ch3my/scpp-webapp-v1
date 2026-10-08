@@ -27,7 +27,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 
 import { NumberInput } from './NumberInput';
 import { ComboboxCategorias } from './ComboboxCategorias';
@@ -240,7 +240,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                             onClick={() => setTipoDoc(Number(tipo.id))}
                                             aria-pressed={tipoDoc === Number(tipo.id)}
                                             className={cn(
-                                                "truncate rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                                                // min-h-11 only below sm, so desktop sizing is unchanged
+                                                "min-h-11 truncate rounded-md px-3 py-1.5 text-sm font-medium transition-colors sm:min-h-0",
                                                 tipoDoc === Number(tipo.id)
                                                     ? "bg-background text-foreground shadow-sm"
                                                     : "text-muted-foreground hover:text-foreground"

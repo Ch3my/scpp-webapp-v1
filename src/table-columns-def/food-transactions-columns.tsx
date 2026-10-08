@@ -4,6 +4,7 @@ import { tableFeaturesConfig } from "@/lib/table-features"
 import { MoreHorizontal, Skull, ArrowUp, ArrowDown, ArrowUpDown, Trash, FilePenLine, CircleMinus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { cn } from "@/lib/utils"
 import {
     Dialog,
     DialogContent,
@@ -11,7 +12,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/responsive-dialog"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -23,13 +24,52 @@ import { DateTime } from "luxon"
 import { useState } from "react"
 import numeral from "numeral"
 
-const accionMapping: { [key: string]: string } = {
+/** Shared with the mobile transaction card. */
+export const accionMapping: { [key: string]: string } = {
     "consumption": "Consumo",
     "adjustment": "Ajuste",
     "restock": "Reposición",
 }
 
-const calculateIcon = (bestBefore: DateTime | null) => {
+/** The movement type, styled identically on desktop and mobile. */
+export function TransactionTypeBadge({
+    transactionType,
+    className,
+}: {
+    transactionType: string;
+    className?: string;
+}) {
+    return (
+        <Badge variant="outline" className={cn("bg-slate-800", className)}>
+            {accionMapping[transactionType]}
+        </Badge>
+    );
+}
+
+/** The transaction code, styled identically on desktop and mobile. */
+export function TransactionCodeBadge({
+    code,
+    className,
+}: {
+    code: string | null;
+    className?: string;
+}) {
+    if (!code) {
+        return (
+            <Badge variant="outline" className={cn("bg-slate-500 dark:bg-slate-700", className)}>
+                N/A
+            </Badge>
+        );
+    }
+    return (
+        <Badge variant="outline" className={cn("bg-orange-500 dark:bg-orange-900", className)}>
+            {code}
+        </Badge>
+    );
+}
+
+/** Skull when a best-before is inside 60 days. Shared with the mobile card. */
+export const calculateIcon = (bestBefore: DateTime | null) => {
     if (!bestBefore) {
         return
     }
@@ -125,11 +165,7 @@ export const columns: ColumnDef<typeof tableFeaturesConfig, FoodTransaction>[] =
         cell: ({ row }) => {
             return (
                 <div className="text-center">
-                    {!row.original.code ? (
-                        <Badge variant="outline" className="bg-slate-500 dark:bg-slate-700" >N/A</Badge>
-                    ) : (
-                        <Badge variant="outline" className="bg-orange-500  dark:bg-orange-900 " >{row.original.code}</Badge>
-                    )}
+                    <TransactionCodeBadge code={row.original.code} />
                 </div>
             )
         },
@@ -142,7 +178,7 @@ export const columns: ColumnDef<typeof tableFeaturesConfig, FoodTransaction>[] =
         accessorKey: "transactionType",
         header: "Tipo",
         cell: ({ row }) => {
-            return <Badge variant="outline" className="bg-slate-800">{accionMapping[row.original.transactionType]}</Badge>;
+            return <TransactionTypeBadge transactionType={row.original.transactionType} />;
         }
     },
     {

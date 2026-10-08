@@ -70,7 +70,7 @@ export function ComboboxProyectos({ value, onChange, disabled }: ComboboxProyect
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[260px] p-0" align="start">
+      <PopoverContent className="w-[260px] max-w-[calc(100vw-1.5rem)] p-0" align="start">
         <Command>
           <CommandInput className="h-9" placeholder="Buscar proyecto..." />
           <CommandList>

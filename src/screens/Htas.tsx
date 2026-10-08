@@ -40,10 +40,12 @@ function Htas() {
         });
     };
 
+    // min-h-full fills the mobile shell's scroll area exactly; sm: keeps the
+    // desktop behaviour, where the parent has no definite height.
     return (
-        <div className="flex justify-center items-center h-screen w-screen">
+        <div className="flex min-h-full w-full items-center justify-center p-4 sm:min-h-svh">
 
-            <Card className="w-87.5">
+            <Card className="w-full max-w-87.5">
                 <CardHeader>
                     <CardTitle>Opciones</CardTitle>
                     <CardDescription></CardDescription>

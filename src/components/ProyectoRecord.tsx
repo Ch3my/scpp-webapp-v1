@@ -16,7 +16,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogDescription
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 
 import { NumberInput } from './NumberInput';
 import { CreateProyecto, Proyecto, UpdateProyecto } from '@/models/Proyecto';

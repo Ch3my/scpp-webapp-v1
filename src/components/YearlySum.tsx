@@ -83,7 +83,7 @@ function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
             <CardTitle className="@[250px]/card:text-3xl text-2xl font-semibold tabular-nums">
               {numeral(utilidadAnual).format("0,0.0")}%
             </CardTitle>
-            <span className='text-sm'>${numeral(montoUtilidad).format("0,0")}</span>
+            <span className='text-base sm:text-sm'>${numeral(montoUtilidad).format("0,0")}</span>
           </div>
           <div className='justify-self-end'>
             {getIcon()}

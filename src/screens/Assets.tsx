@@ -10,7 +10,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog"
+} from "@/components/responsive-dialog"
 import { MoreHorizontal } from "lucide-react"
 import {
     DropdownMenu,

@@ -72,14 +72,16 @@ export function ComboboxAlimentos({
           variant="outline"
           role="combobox"
           aria-expanded={open}
-          className="justify-between font-normal w-75"
+          // w-full below sm so it shrinks into a phone-width row; desktop keeps 300px
+          className="justify-between overflow-hidden font-normal w-full sm:w-75"
           disabled={disabled}
         >
-          {getDisplayText()}
-          <ChevronsUpDown className="opacity-50" />
+          <span className="truncate">{getDisplayText()}</span>
+          <ChevronsUpDown className="shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-75 p-0" align="start">
+      {/* max-w cap so the 300px panel cannot overflow a narrow phone */}
+      <PopoverContent className="w-75 max-w-[calc(100vw-1.5rem)] p-0" align="start">
         <Command>
           <CommandInput className="h-9" />
           <CommandList>

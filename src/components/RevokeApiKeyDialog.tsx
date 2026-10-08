@@ -6,7 +6,7 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/components/responsive-dialog";
 import { Loader2 } from "lucide-react";
 import { ApiKey } from "@/models/ApiKey";
 import { toast } from "sonner";

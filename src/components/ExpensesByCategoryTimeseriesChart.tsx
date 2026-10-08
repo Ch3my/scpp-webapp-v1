@@ -113,7 +113,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                     variant={nMonths === 13 ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => setNMonths(13)}
-                                    className="h-6 px-2 text-xs"
+                                    className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
                                 >
                                     13M
                                 </Button>
@@ -121,7 +121,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                     variant={nMonths === 9 ? "default" : "outline"}
                                     size="sm"
                                     onClick={() => setNMonths(9)}
-                                    className="h-6 px-2 text-xs"
+                                    className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
                                 >
                                     9M
                                 </Button>
@@ -149,7 +149,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                 variant={nMonths === 13 ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setNMonths(13)}
-                                className="h-6 px-2 text-xs"
+                                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
                             >
                                 13M
                             </Button>
@@ -157,7 +157,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                 variant={nMonths === 9 ? "default" : "outline"}
                                 size="sm"
                                 onClick={() => setNMonths(9)}
-                                className="h-6 px-2 text-xs"
+                                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
                             >
                                 9M
                             </Button>

@@ -4,27 +4,17 @@ import { Skeleton } from './ui/skeleton';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { useMemo } from 'react';
 import { useCurrMonthSpending, type CurrentMonthSpendingResponse } from '@/api/hooks';
+import { getPercentageColor } from '@/lib/percentage-color';
+import { useLayoutMode } from '@/shell/useLayoutMode';
 
 type TopGasto = CurrentMonthSpendingResponse['topGastos'][number];
 
-const OKLCH_GREEN_600 = { l: 62.7, c: 0.194, h: 149.214 };
-const OKLCH_RED_600 = { l: 57.7, c: 0.245, h: 27.325 };
-
-const getPercentageColor = (percent: number) => {
-    // Ensure percentage is between 0 and 100
-    const clampedPercent = Math.max(0, Math.min(100, percent));
-    const t = clampedPercent / 100; // Normalised t-value from 0 to 1
-
-    // Linear interpolation for each Oklch component
-    const interpolatedL = OKLCH_GREEN_600.l + (OKLCH_RED_600.l - OKLCH_GREEN_600.l) * t;
-    const interpolatedC = OKLCH_GREEN_600.c + (OKLCH_RED_600.c - OKLCH_GREEN_600.c) * t;
-    const interpolatedH = OKLCH_GREEN_600.h + (OKLCH_RED_600.h - OKLCH_GREEN_600.h) * t;
-
-    return `oklch(${interpolatedL}% ${interpolatedC} ${interpolatedH})`;
-};
+/** Shown on mobile, where the card is content-sized and cannot be measured. */
+const MOBILE_TOP_GASTOS = 5;
 
 
 function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
+    const isMobile = useLayoutMode() === 'mobile';
     const [topGastos, setTopGastos] = useState<TopGasto[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
@@ -68,6 +58,14 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     };
 
     useEffect(() => {
+        // On mobile the card is stacked and content-sized, so the list has no
+        // height to measure - flex-1 collapses to ~0 and the old maths resolved
+        // to a single row. Show a fixed count and let the card grow instead.
+        if (isMobile) {
+            setTopGastos(allTopGastos.slice(0, MOBILE_TOP_GASTOS));
+            return;
+        }
+
         if (allTopGastos.length > 0 && listRef.current) {
             const timeoutId = setTimeout(() => {
                 calculateVisibleItems();
@@ -86,7 +84,7 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
                 resizeObserver.disconnect();
             };
         }
-    }, [allTopGastos]);
+    }, [allTopGastos, isMobile]);
 
     // Keep ref for backwards compatibility
     useImperativeHandle(ref, () => ({
@@ -186,7 +184,13 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
                 <span className="text-muted-foreground">
                     Top Gastos
                 </span>
-                <div className='flex flex-col gap-1 text-sm flex-1 overflow-hidden w-full' ref={listRef}>
+                <div
+                    className={
+                        'flex w-full flex-col gap-1 text-base sm:text-sm ' +
+                        (isMobile ? '' : 'flex-1 overflow-hidden')
+                    }
+                    ref={listRef}
+                >
                     {topGastos.map((gasto, index) => (
                         <div key={index} className="flex gap-2 overflow-hidden">
                             <span className="truncate">{gasto.proposito}</span>

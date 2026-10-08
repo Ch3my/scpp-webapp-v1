@@ -24,8 +24,14 @@ export function BottomNav() {
 
     return (
         <>
+            {/*
+              * Not position:fixed. The shell lays this out as the last row of a
+              * viewport-height flex column, so it cannot be scrolled away or be
+              * displaced by a page that overflows horizontally - which is what
+              * breaks fixed positioning on mobile browsers.
+              */}
             <nav
-                className="fixed inset-x-0 bottom-0 z-40 border-t bg-background"
+                className="shrink-0 border-t bg-background"
                 style={{ paddingBottom: "var(--safe-area-bottom)" }}
             >
                 <ul className="flex items-stretch">
@@ -36,7 +42,7 @@ export function BottomNav() {
                                 aria-current={isActive(item.url) ? "page" : undefined}
                                 className={cn(
                                     // min-h-14 keeps every target comfortably past the 44px minimum
-                                    "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-[11px]",
+                                    "flex min-h-14 flex-col items-center justify-center gap-1 px-1 text-xs",
                                     isActive(item.url)
                                         ? "text-primary"
                                         : "text-muted-foreground"
@@ -55,7 +61,7 @@ export function BottomNav() {
                             aria-haspopup="dialog"
                             aria-expanded={moreOpen}
                             className={cn(
-                                "flex min-h-14 w-full flex-col items-center justify-center gap-1 px-1 text-[11px]",
+                                "flex min-h-14 w-full flex-col items-center justify-center gap-1 px-1 text-xs",
                                 overflowActive ? "text-primary" : "text-muted-foreground"
                             )}
                         >

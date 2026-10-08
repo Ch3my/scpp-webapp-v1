@@ -47,7 +47,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 13 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(13)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 13M
             </Button>
@@ -55,7 +55,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 6 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(6)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 6M
             </Button>
@@ -63,7 +63,7 @@ function MonthSelector({ nMonths, setNMonths }: { nMonths: number; setNMonths: (
                 variant={nMonths === 3 ? "default" : "outline"}
                 size="sm"
                 onClick={() => setNMonths(3)}
-                className="h-6 px-2 text-xs"
+                className="h-10 px-3 text-sm sm:h-6 sm:px-2 sm:text-xs"
             >
                 3M
             </Button>
@@ -202,7 +202,7 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
                     </ChartContainer>
                     {totalCategories > MIN_CATEGORIES && (
                         <div className="mt-4 flex items-center gap-3">
-                            <span className="text-sm text-muted-foreground whitespace-nowrap">
+                            <span className="text-base sm:text-sm text-muted-foreground whitespace-nowrap">
                                 {effectiveVisibleCount} / {totalCategories}
                             </span>
                             <Slider
