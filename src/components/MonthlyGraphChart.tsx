@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/
 import numeral from "numeral";
 import { useMonthlyGraph } from "@/api/hooks";
 import type { MonthlyGraphData } from "@/models/MonthlyGraphData";
+import { useLayoutMode } from "@/shell/useLayoutMode";
 
 Settings.defaultLocale = "es";
 
@@ -30,9 +31,13 @@ const chartConfig = {
 } satisfies ChartConfig
 
 function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
-    const [nMonths, setNMonths] = useState<number>(13);
+    // 13 months of ticks do not fit at phone width, so mobile opens on 6.
+    // useLayoutMode is correct on the first render, so this only picks the
+    // initial value - the slider still goes to 24 on both layouts.
+    const defaultNMonths = useLayoutMode() === "mobile" ? 6 : 13;
+    const [nMonths, setNMonths] = useState<number>(defaultNMonths);
     const [offset, setOffset] = useState<number>(0);
-    const [debouncedNMonths, setDebouncedNMonths] = useState<number>(13);
+    const [debouncedNMonths, setDebouncedNMonths] = useState<number>(defaultNMonths);
     const [debouncedOffset, setDebouncedOffset] = useState<number>(0);
 
     useEffect(() => {

@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import numeral from "numeral";
 import { useExpensesByCategoryTimeseries } from "@/api/hooks";
+import { useLayoutMode } from "@/shell/useLayoutMode";
 
 Settings.defaultLocale = "es";
 
@@ -32,6 +33,7 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
     const { filterTopN } = props;
     const [activeChart, setActiveChart] = useState<string>("")
     const [nMonths, setNMonths] = useState<number>(9)
+    const isMobile = useLayoutMode() === "mobile";
 
     const { data: expensesData, isLoading, refetch } = useExpensesByCategoryTimeseries(nMonths);
 
@@ -196,9 +198,9 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                         accessibilityLayer
                         data={chartData}
                         margin={{
-                            top: 30,
+                            top: isMobile ? 10 : 30,
                             left: 50,
-                            right: 50,
+                            right: isMobile ? 12 : 50,
                         }}
                     >
                         <CartesianGrid vertical={false} />
@@ -232,13 +234,16 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
                                 r: 6,
                             }}
                         >
-                            <LabelList
-                                position="top"
-                                offset={12}
-                                className="fill-foreground"
-                                fontSize={14}
-                                formatter={(value: any) => numeral(Number(value)).format("0,0")}
-                            />
+                            {/* Point labels collide at phone width - the tooltip covers it there. */}
+                            {!isMobile && (
+                                <LabelList
+                                    position="top"
+                                    offset={12}
+                                    className="fill-foreground"
+                                    fontSize={14}
+                                    formatter={(value: any) => numeral(Number(value)).format("0,0")}
+                                />
+                            )}
                         </Line>
                     </LineChart>
                 </ChartContainer>
