@@ -8,15 +8,22 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 import { useAppState } from "./AppState";
 import Dashboard from "./screens/Dashboard";
 import { Skeleton } from "./components/ui/skeleton";
-import { QueryClientProvider } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import "./App.css";
 import "./Custom.css";
 import { RequireAuth } from "./components/RequireAuth";
 import { Shell } from "./shell/Shell";
 import { responsiveScreen } from "./shell/responsive-screen";
 import { queryClient } from "./api/queryClient";
+import {
+  CACHE_MAX_AGE_MS,
+  dehydrateOptions,
+  hydrateOptions,
+  queryPersister,
+} from "./api/persist";
 import { setUnauthorizedHandler } from "./api/client";
 import { disablePageZoom } from "./lib/disable-page-zoom";
+import { registerServiceWorker } from "./lib/pwa";
 
 // Dashboard is eager - 90% of users auto-navigate to it from App.tsx
 // Lazy load other screens
@@ -44,6 +51,10 @@ const ProyectosScreen = responsiveScreen(Proyectos, MobileProyectos);
 const ApiKeysScreen = responsiveScreen(ApiKeys, MobileApiKeys);
 
 disablePageZoom();
+
+// Registers the service worker and owns the update-and-reload path. No-op in
+// `vite dev` (the plugin resolves a stub there).
+registerServiceWorker();
 
 // Keeps the api client free of any routing import
 setUnauthorizedHandler(() => {
@@ -111,7 +122,24 @@ const RootComponent = () => {
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
-    <QueryClientProvider client={queryClient}>
+    {/*
+      * Not QueryClientProvider: this one restores the cache from IndexedDB
+      * first and holds queries off until it lands, so a cold start - including
+      * one with no connection - renders the last known data instead of empty
+      * screens. See api/persist.ts.
+      */}
+    <PersistQueryClientProvider
+      client={queryClient}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: CACHE_MAX_AGE_MS,
+        // Changes every build, so an update never hydrates data shaped like
+        // the previous wire format.
+        buster: __BUILD_ID__,
+        dehydrateOptions,
+        hydrateOptions,
+      }}
+    >
       <BrowserRouter>
         <SidebarProvider defaultOpen={false}>
           <TooltipProvider>
@@ -120,6 +148,6 @@ ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
           </TooltipProvider>
         </SidebarProvider>
       </BrowserRouter>
-    </QueryClientProvider>
+    </PersistQueryClientProvider>
   </React.StrictMode>
 );

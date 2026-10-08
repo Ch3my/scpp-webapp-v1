@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { useAppState } from '@/AppState';
+import { clearPersistedCache } from './persist';
 
 /**
  * Shared axios instance. Ported from scpp-app-v2/api/axiosClient.ts, keeping
@@ -53,6 +54,8 @@ api.interceptors.response.use(
       const { setLoggedIn, setSessionId } = useAppState.getState();
       setLoggedIn(false);
       setSessionId('');
+      // The session is gone, so the data cached under it must go too.
+      clearPersistedCache();
       if (onUnauthorized) {
         onUnauthorized();
       } else {

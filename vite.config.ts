@@ -6,6 +6,13 @@ import { VitePWA } from "vite-plugin-pwa"
 
 // https://vitejs.dev/config/
 export default defineConfig(async () => ({
+  define: {
+    // Busts the persisted query cache (src/api/persist.ts) on every deploy. A
+    // build whose wire format changed must not hydrate the old shape; the cache
+    // refills on the first render, which is online by definition because the
+    // update had to be downloaded.
+    __BUILD_ID__: JSON.stringify(Date.now().toString(36)),
+  },
   build: {
     rolldownOptions: {
       output: {
@@ -30,7 +37,15 @@ export default defineConfig(async () => ({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt", not "autoUpdate": the new worker waits instead of activating
+      // under the running page, so its precached chunks stay valid until the
+      // reload. src/lib/pwa.ts drives the actual update (periodic checks, a
+      // toast, auto-apply when the app is backgrounded) - the plugin's own
+      // injected registerSW.js never reloads the page, which is why installed
+      // phones kept running the old bundle.
+      registerType: "prompt",
+      // We import `virtual:pwa-register` ourselves in src/lib/pwa.ts.
+      injectRegister: null,
       includeAssets: ["favicon.ico", "apple-touch-icon.png"],
       manifest: {
         name: "SCPP - Control de Presupuestos Personales",
@@ -69,6 +84,10 @@ export default defineConfig(async () => ({
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        // skipWaiting stays off deliberately. Leaving it off is what makes
+        // workbox emit the SKIP_WAITING message listener that src/lib/pwa.ts
+        // triggers, so the swap happens at a moment we choose and is always
+        // followed by a reload.
       },
       devOptions: {
         // Keep the service worker out of `vite dev`; it caches aggressively and

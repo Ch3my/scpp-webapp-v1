@@ -14,6 +14,13 @@ import { QueryClient } from '@tanstack/react-query';
  * gcTime (30 min) is the setting that actually makes refocus cheap: it keeps
  * data cached well past staleTime, so a refetch updates rows in place instead
  * of dropping to a skeleton.
+ *
+ * gcTime also decides what survives to disk. api/persist.ts can only write
+ * what is still in memory, so the offline cache is effectively "everything
+ * used in the last 30 minutes of app-open time" - which is what you want on a
+ * phone, where the app is opened, browsed and closed. Raising it would persist
+ * more at the cost of holding every filter combination the user ever typed in
+ * the documentos search, each of which is its own query key.
  */
 export const queryClient = new QueryClient({
     defaultOptions: {

@@ -193,12 +193,100 @@ label-beside-value in one card is what makes it look disorganised.
 
 ## PWA
 
-`vite-plugin-pwa`, `registerType: autoUpdate`. Icons in `public/` (192, 512, maskable 512, apple
-touch). Maskable keeps the logo at ~59% of the canvas because launchers crop to a shape.
+`vite-plugin-pwa`, `registerType: prompt` + `injectRegister: null`. Icons in `public/` (192, 512,
+maskable 512, apple touch). Maskable keeps the logo at ~59% of the canvas because launchers crop
+to a shape.
+
+### Updates reaching installed phones
+
+This used to be broken, and the fix is split over three places — change one and the other two
+stop making sense.
+
+`src/lib/pwa.ts` owns registration and is the only caller of `virtual:pwa-register`. The plugin's
+own injected `registerSW.js` was the bug: it is nothing but
+`navigator.serviceWorker.register('/sw.js')`. It never reloads the document, so a new worker took
+control while the running page went on executing the *old* JS modules already in memory — and an
+installed PWA is resumed, not reloaded, for weeks.
+
+Three things have to hold:
+
+1. **The page must reload.** A service worker swap alone changes nothing for a document that is
+   already running. `registerSW` from `virtual:pwa-register` wraps workbox-window and does the
+   reload; the injected script does not. Never go back to `injectRegister: 'script'`/`'auto'`.
+2. **Something has to check.** The browser only looks for a new `sw.js` on a real navigation (and
+   at most once a day by itself). `pwa.ts` calls `registration.update()` every 30 min, on
+   `visibilitychange` → visible, and on `online`, throttled to one check a minute.
+3. **`prompt`, not `autoUpdate`.** Under `autoUpdate` the plugin forces `skipWaiting` +
+   `clientsClaim`, so the new worker activates under the live page and `cleanupOutdatedCaches`
+   deletes the chunks that page still lazy-loads — a route opened after that 404s. With `prompt`
+   the new worker waits, the old caches stay valid, and we choose the moment: a Sonner toast with
+   a Recargar action, or silently when the app is backgrounded (`visibilityState === 'hidden'`),
+   so the next resume is already the new version.
+
+Leaving `workbox.skipWaiting` unset is deliberate — that is what makes workbox emit the
+`SKIP_WAITING` message listener that `applyUpdate()` posts to.
+
+`public/serve.json` (copied to `dist/`, where `serve` reads it) sends `no-cache` for
+`index.html`/`sw.js`/`manifest.webmanifest` and `immutable` for hashed `assets/**`. `serve` sends
+no `Cache-Control` at all on its own, which leaves browsers applying heuristic freshness to
+`index.html`.
+
+Prod is Railway behind Cloudflare. Railway does not cache, but **Cloudflare caches `.js` by
+extension under the default Cache Level: Standard**, and `/sw.js` is a `.js` file. A stale `sw.js`
+at the edge stalls every update check for the whole edge TTL, and `updateViaCache` does not help —
+it only bypasses the *browser's* HTTP cache, not Cloudflare's. The `no-cache` headers above are
+what keep the edge honest; if the DNS record is proxied (orange cloud), also add a Cache Rule that
+bypasses cache for `/sw.js`, `/index.html` and `/manifest.webmanifest`.
 
 **Never add API responses to `runtimeCaching`.** TanStack Query owns response caching, and a
 service-worker cache of authenticated responses outlives a logout and leaks across users. The
 worker precaches the app shell only; its sole runtime route is the SPA navigation fallback.
+Offline *data* is handled one layer up, in `src/api/persist.ts` — see below.
+
+---
+
+## Offline
+
+Three layers, and all three are needed before the app is usable with no connection.
+
+**1. The shell.** `globPatterns` precaches every chunk, not just the entry — ~1.5 MB, both
+layouts, charts included — and `navigateFallback` serves `index.html` for any route. So every
+screen loads offline. No remote fonts; nothing else to fetch.
+
+**2. The data — `src/api/persist.ts`.** The query cache is persisted to IndexedDB and restored
+through `PersistQueryClientProvider` in `main.tsx` (not `QueryClientProvider`; it holds queries
+off until hydration lands, so a fetch cannot resolve first and overwrite what was restored).
+
+- **IndexedDB, not localStorage**: localStorage is ~5 MB for the whole origin and zustand's
+  `app-storage` already lives there, and a megabyte write is synchronous on the main thread.
+- **Luxon must be tagged.** `useFood` puts real `DateTime` objects in the cache and
+  `JSON.stringify` flattens them to ISO strings through their own `toJSON`, so a naive round-trip
+  hands a hydrated screen a string and `.toFormat()` throws. `encodeDates`/`decodeDates` tag and
+  rebuild them, reviving as `{ zone: 'utc' }` to match the hooks. **Any new query holding a
+  non-JSON value needs the same treatment** — this is the trap to check first when a hydrated
+  screen crashes and a fresh one does not.
+- **Asset details are excluded** (`assetData` is base64). The list persists, so the screen renders
+  offline and only the picture needs a connection.
+- **Cleared at every session boundary**: login, logout and 401. That is what keeps one user's
+  figures out of another's session, and it is why this is not in the service worker — a worker
+  cache is keyed by URL, invisible to the app, and survives a logout.
+- `buster: __BUILD_ID__` (defined in `vite.config.ts`) throws the cache away on every deploy, so a
+  changed wire format can never be hydrated into the new build.
+- `gcTime` is the real limit on what gets written — see `api/queryClient.ts`.
+
+**3. The boot gate — `src/App.tsx`.** This was the blocker that made the other two pointless: any
+failure of `/check-session` redirected to `/login`, which is the one screen an offline user cannot
+get past. It now separates *the server answered and rejected us* (→ login) from *we could not
+reach the server* (→ boot on the stored session, toast "Sin conexión", show the persisted cache).
+A dead session still fails on the first real request, and the 401 interceptor signs them out then.
+`navigator.onLine === false` short-circuits the request, and the call has an explicit 8 s timeout —
+without one a captive portal or a cold Railway container sits on the spinner forever.
+
+**Known gap: writes.** Query's default `networkMode: 'online'` *pauses* an offline mutation and
+resumes it on reconnect, but only while the page lives — and mutations are deliberately not
+persisted (`shouldDehydrateMutation: () => false`), because a replayed gasto is a silent
+duplicate. So an offline save shows its dialog spinner until the connection returns. Making that
+honest is a product decision: fail fast and tell the user, or build a real outbox.
 
 `devOptions.enabled: false` — the worker is off in `vite dev` because it makes HMR confusing.
 Verify PWA behaviour with `npm run preview`.
