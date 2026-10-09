@@ -1423,6 +1423,10 @@ export interface components {
                 id: number;
                 nombre: string;
             } | null;
+            user: {
+                id: number;
+                nombre: string;
+            };
             tipoDoc: {
                 id: number;
                 descripcion: string;
