@@ -5,6 +5,7 @@ export {
     useDocumentos,
     useDocumento,
     useProyectoGastos,
+    useSugerirCategoria,
     useSaveDocumento,
     useDeleteDocumento,
 } from './useDocumentos';

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../client';
 import { queryKeys, type DocumentFilters } from '../queryKeys';
-import type { Documento } from '@/models/Documento';
+import type { CategoriaSugerida, Documento } from '@/models/Documento';
 
 /**
  * Invalidated together by every documento write: the dashboard charts are all
@@ -110,4 +110,30 @@ export function useDeleteDocumento() {
         },
         onSuccess: () => invalidateDocumentoDependents(queryClient),
     });
+}
+
+/**
+ * Asks the backend's classifier for a gasto's categoria, learned from past
+ * gastos. Imperative because it runs on an event (leaving the proposito field),
+ * not on render. `fk_categoria` is null when the classifier is not confident.
+ */
+export function useSugerirCategoria() {
+    const queryClient = useQueryClient();
+    return (proposito: string, monto: number): Promise<CategoriaSugerida | null> => {
+        const trimmed = proposito.trim();
+        if (trimmed.length < 2) return Promise.resolve(null);
+        return queryClient.fetchQuery({
+            queryKey: queryKeys.documentos.sugerenciaCategoria(trimmed, monto),
+            queryFn: async () => {
+                const { data } = await api.get<CategoriaSugerida>('/documentos/sugerir-categoria', {
+                    params: { proposito: trimmed, monto },
+                });
+                return data;
+            },
+            // The server retrains once a day; within a session an answer holds
+            staleTime: Infinity,
+            // A failed suggestion just means picking by hand; retrying only delays that
+            retry: false,
+        });
+    };
 }

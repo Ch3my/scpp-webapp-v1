@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Label } from '@/components/ui/label';
-import { CirclePlus, Loader2, Tags, Trash2 } from "lucide-react"
+import { CirclePlus, Loader2, Sparkles, Tags, Trash2 } from "lucide-react"
 import { Input } from './ui/input';
 import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { toast } from "sonner"
-import { useDocumento, useSaveDocumento, useDeleteDocumento, useTipoDocs } from '@/api/hooks';
+import { useDocumento, useSaveDocumento, useDeleteDocumento, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -61,6 +61,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
     const [tipoDoc, setTipoDoc] = useState<number>(TIPO_DOC_GASTO);
     const [categoria, setCategoria] = useState<number>(0);
+    // Last categoria the classifier filled in, so the field can say so
+    const [categoriaSugerida, setCategoriaSugerida] = useState<number>(0);
     const [proyecto, setProyecto] = useState<number>(0);
     const [cuotas, setCuotas] = useState<number>(0);
 
@@ -76,6 +78,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
 
     useEffect(() => {
         if (isOpen) {
+            setCategoriaSugerida(0);
             if (docData) {
                 // Edit mode: use data (instant from initialData, updates if freshData differs)
                 setMonto(docData.monto);
@@ -97,6 +100,20 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             }
         }
     }, [isOpen, docData]);
+
+    // Leaving the proposito field fills an empty categoria from the classifier.
+    // A categoria that is already set - picked, saved, or suggested earlier - is
+    // never touched, and an unconfident answer (null) leaves the field empty.
+    const sugerirCategoria = useSugerirCategoria();
+    const handlePropositoBlur = async () => {
+        if (!isGasto || categoria !== 0) return;
+        const sugerencia = await sugerirCategoria(proposito, monto).catch(() => null);
+        const sugerida = sugerencia?.fk_categoria;
+        if (!sugerida) return;
+        setCategoriaSugerida(sugerida);
+        // The user may have picked one while the request was in flight
+        setCategoria((actual) => (actual === 0 ? sugerida : actual));
+    };
 
     // Categoria and proyecto are deliberately NOT cleared when the tipo stops being
     // a gasto: the panel only unmounts, so toggling the tipo away and back brings the
@@ -287,6 +304,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 value={proposito}
                                 autoComplete="off"
                                 onChange={(e) => setProposito(e.target.value)}
+                                onBlur={handlePropositoBlur}
                             />
                         </div>
 
@@ -323,8 +341,14 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 </div>
                                 <div className="grid gap-2.5 sm:grid-cols-2">
                                     <div className="grid gap-1.5">
-                                        <Label>
+                                        <Label className="flex items-center gap-1">
                                             Categoria <span className="text-destructive">*</span>
+                                            {categoria !== 0 && categoria === categoriaSugerida && (
+                                                <span className="ml-auto flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                                                    <Sparkles className="size-3" />
+                                                    Sugerida
+                                                </span>
+                                            )}
                                         </Label>
                                         <ComboboxCategorias
                                             value={categoria}

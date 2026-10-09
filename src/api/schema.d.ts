@@ -234,6 +234,44 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/documentos/sugerir-categoria": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query: {
+                    proposito: string;
+                    monto?: number | null;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Suggested categoria for a gasto, learned from past gastos */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["CategoriaSugerida"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/categorias": {
         parameters: {
             query?: never;
@@ -1241,6 +1279,12 @@ export interface components {
                 id: number;
                 descripcion: string;
             };
+        };
+        CategoriaSugerida: {
+            fk_categoria: number | null;
+            confianza: number;
+            /** @enum {string|null} */
+            fuente: "historial" | "modelo" | null;
         };
         CreateDocumento: {
             fk_categoria: number | null;

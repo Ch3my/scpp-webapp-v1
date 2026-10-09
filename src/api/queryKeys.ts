@@ -48,6 +48,10 @@ export const queryKeys = {
             [...queryKeys.documentos.lists(), { proyectoId }] as const,
         details: () => [...queryKeys.documentos.all, 'detail'] as const,
         detail: (id: number) => [...queryKeys.documentos.details(), id] as const,
+        // Under documentos.all so a documento write also drops cached
+        // suggestions (the server itself only retrains once a day)
+        sugerenciaCategoria: (proposito: string, monto: number) =>
+            [...queryKeys.documentos.all, 'sugerencia-categoria', { proposito, monto }] as const,
     },
 
     proyectos: {
