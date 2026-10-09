@@ -1,10 +1,30 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import api from '../client';
 import { useAppState } from '@/AppState';
 import { clearPersistedCache } from '../persist';
+import { queryKeys } from '../queryKeys';
 import type { components } from '../schema';
 
 type LoginSuccess = components['schemas']['LoginSuccessResponse'];
+export type Me = components['schemas']['Me'];
+
+/**
+ * Who is logged in: user, family, miembro and `rol` ('admin' | 'miembro'). Use it to
+ * decide what to *show*; the server already limits what each role can read or change.
+ * It only changes at login, and the cache is cleared at every session boundary, so it
+ * never needs refetching within a session.
+ */
+export function useMe(enabled: boolean = true) {
+    return useQuery({
+        queryKey: queryKeys.me,
+        queryFn: async () => {
+            const { data } = await api.get<Me>('/me');
+            return data;
+        },
+        enabled,
+        staleTime: Infinity,
+    });
+}
 
 export function useLogin() {
     return useMutation({

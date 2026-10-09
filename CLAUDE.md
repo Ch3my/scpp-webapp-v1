@@ -7,7 +7,8 @@ Stack: React 19, TypeScript 7, Vite 8 (rolldown), Tailwind v4, shadcn/Radix, Tan
 Table v9, Zustand, axios, Luxon, Recharts.
 
 Backend is a **separate repo**: `../scpp-microservice-hono` (Hono + Bun + MariaDB). Dev on
-`http://localhost:3000`, prod `https://scpp.lezora.cl`. It serves an OpenAPI spec at
+`http://localhost:3000` against a **local** MariaDB (`scpp_dev`, via the backend's `.env.local`;
+delete that file and it talks to production), prod `https://scpp.lezora.cl`. It serves an OpenAPI spec at
 `/openapi.json` and Swagger at `/docs`.
 
 ```
@@ -112,6 +113,12 @@ response schemas rather than an optional field, so the contract says which one h
 Note `assets.routes.ts` needs **both** `use('/assets', requireSession)` and
 `use('/assets/*', requireSession)` — the first matches only the exact path, and without the second
 `GET /assets/{id}` served images unauthenticated (verified: the request reached the handler).
+
+**Families and roles are enforced by the backend, not here.** Every row belongs to a familia;
+an `admin` sees the whole family, a `miembro` only gastos they entered or that are labelled as
+theirs. The server already narrows every list, total and write, so screens never filter by
+user themselves. `useMe()` (`GET /me`) gives `rol` for deciding what to *show* (admin-only
+screens). Never send `fk_user`/`fk_familia` in a body — the server takes them from the session.
 
 ### 4. Screens
 

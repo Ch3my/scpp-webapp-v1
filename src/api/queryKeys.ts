@@ -25,6 +25,10 @@ export const queryKeys = {
     // rather than through a query. There used to be an unused `auth.session()`
     // key here inviting someone to wire it up.
 
+    // GET /me: the caller's family and role. Unlike /check-session this is data the
+    // UI renders (admin-only screens), so it is a query.
+    me: ['me'] as const,
+
     dashboard: {
         all: ['dashboard'] as const,
         monthlyGraph: (nMonths: number) =>

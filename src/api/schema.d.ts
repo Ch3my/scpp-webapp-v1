@@ -119,6 +119,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description The caller's user, family, miembro and role */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Me"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documentos": {
         parameters: {
             query?: never;
@@ -1258,6 +1293,24 @@ export interface components {
             successDescription: string[];
         };
         LogoutRequest: Record<string, never>;
+        Me: {
+            user: {
+                id: number;
+                fullName: string | null;
+                emailAddress: string | null;
+            };
+            familia: {
+                id: number;
+                nombre: string;
+            };
+            miembro: {
+                id: number;
+                nombre: string;
+            };
+            /** @enum {string} */
+            rol: "admin" | "miembro";
+            isSuperAdmin: boolean;
+        };
         Documento: {
             id: number;
             fk_tipoDoc: number;
@@ -1266,7 +1319,7 @@ export interface components {
             fecha: string;
             fk_categoria: number | null;
             fk_proyecto: number | null;
-            fk_user: number | null;
+            fk_user: number;
             categoria: {
                 id: number;
                 descripcion: string;
@@ -1293,7 +1346,6 @@ export interface components {
             proposito: string;
             monto: number;
             fecha: string;
-            fk_user?: number | null;
         };
         UpdateDocumento: {
             id: number;
@@ -1303,7 +1355,6 @@ export interface components {
             proposito: string;
             monto: number;
             fecha: string;
-            fk_user?: number | null;
         };
         DeleteDocumento: {
             id: number;

@@ -1,4 +1,5 @@
-export { useLogin, useLogout } from './useAuth';
+export { useLogin, useLogout, useMe } from './useAuth';
+export type { Me } from './useAuth';
 export { useCategorias, useTipoDocs } from './useLookups';
 
 export {
