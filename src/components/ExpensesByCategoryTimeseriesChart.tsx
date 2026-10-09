@@ -13,6 +13,7 @@ import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import numeral from "numeral";
 import { useExpensesByCategoryTimeseries } from "@/api/hooks";
+import { useDashboardMiembro } from "@/components/dashboard-miembro";
 import { useLayoutMode } from "@/shell/useLayoutMode";
 
 Settings.defaultLocale = "es";
@@ -35,7 +36,8 @@ function ExpensesByCategoryTimeseriesChart(props: ExpensesByCategoryTimeseriesCh
     const [nMonths, setNMonths] = useState<number>(9)
     const isMobile = useLayoutMode() === "mobile";
 
-    const { data: expensesData, isLoading, refetch } = useExpensesByCategoryTimeseries(nMonths);
+    const miembroId = useDashboardMiembro();
+    const { data: expensesData, isLoading, refetch } = useExpensesByCategoryTimeseries(nMonths, miembroId);
 
     const safeExpensesData = expensesData ?? { labels: [], datasets: [], range: { start: "", end: "" } };
 

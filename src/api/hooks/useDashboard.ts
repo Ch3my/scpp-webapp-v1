@@ -23,12 +23,15 @@ export type YearlySumResponse = Schemas['YearlySumResponse'];
  * concern. These hooks only own fetching and caching.
  */
 
-export function useMonthlyGraph(nMonths: number, offset: number = 0) {
+/** `miembroId` 0 means everyone; anything else narrows to gastos "para" that miembro. */
+const miembroParam = (miembroId: number) => (miembroId ? { fk_miembro: miembroId } : {});
+
+export function useMonthlyGraph(nMonths: number, offset: number = 0, miembroId: number = 0) {
     return useQuery<MonthlyGraphData>({
-        queryKey: [...queryKeys.dashboard.monthlyGraph(nMonths), { offset }],
+        queryKey: [...queryKeys.dashboard.monthlyGraph(nMonths, miembroId), { offset }],
         queryFn: async () => {
             const { data } = await api.get('/monthly-graph', {
-                params: { nMonths, offset },
+                params: { nMonths, offset, ...miembroParam(miembroId) },
             });
             return data;
         },
@@ -36,45 +39,49 @@ export function useMonthlyGraph(nMonths: number, offset: number = 0) {
 }
 
 /** nMonths=0 is the current month only. */
-export function useExpensesByCategory(nMonths: number) {
+export function useExpensesByCategory(nMonths: number, miembroId: number = 0) {
     return useQuery<ExpensesByCategoryResponse>({
-        queryKey: queryKeys.dashboard.expensesByCategory(nMonths),
+        queryKey: queryKeys.dashboard.expensesByCategory(nMonths, miembroId),
         queryFn: async () => {
             const { data } = await api.get('/expenses-by-category', {
-                params: { nMonths },
+                params: { nMonths, ...miembroParam(miembroId) },
             });
             return data;
         },
     });
 }
 
-export function useExpensesByCategoryTimeseries(nMonths: number) {
+export function useExpensesByCategoryTimeseries(nMonths: number, miembroId: number = 0) {
     return useQuery<ExpensesByCategoryTimeseriesResponse>({
-        queryKey: queryKeys.dashboard.expensesByCategoryTimeseries(nMonths),
+        queryKey: queryKeys.dashboard.expensesByCategoryTimeseries(nMonths, miembroId),
         queryFn: async () => {
             const { data } = await api.get('/expenses-by-category-timeseries', {
-                params: { nMonths },
+                params: { nMonths, ...miembroParam(miembroId) },
             });
             return data;
         },
     });
 }
 
-export function useCurrMonthSpending() {
+export function useCurrMonthSpending(miembroId: number = 0) {
     return useQuery<CurrentMonthSpendingResponse>({
-        queryKey: queryKeys.dashboard.currMonthSpending(),
+        queryKey: queryKeys.dashboard.currMonthSpending(miembroId),
         queryFn: async () => {
-            const { data } = await api.get('/curr-month-spending');
+            const { data } = await api.get('/curr-month-spending', {
+                params: miembroParam(miembroId),
+            });
             return data;
         },
     });
 }
 
-export function useYearlySum(nMonths: number = 12) {
+export function useYearlySum(nMonths: number = 12, miembroId: number = 0) {
     return useQuery<YearlySumResponse>({
-        queryKey: queryKeys.dashboard.yearlySum(nMonths),
+        queryKey: queryKeys.dashboard.yearlySum(nMonths, miembroId),
         queryFn: async () => {
-            const { data } = await api.get('/yearly-sum', { params: { nMonths } });
+            const { data } = await api.get('/yearly-sum', {
+                params: { nMonths, ...miembroParam(miembroId) },
+            });
             return data;
         },
     });

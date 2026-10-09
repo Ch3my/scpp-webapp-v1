@@ -169,6 +169,7 @@ export interface paths {
                     fechaTermino?: string;
                     fk_categoria?: string;
                     fk_proyecto?: string;
+                    fk_miembro?: string;
                     fk_user?: string;
                     searchPhrase?: string;
                     searchPhraseIgnoreOtherFilters?: string;
@@ -547,6 +548,7 @@ export interface paths {
                 query: {
                     nMonths: string;
                     offset?: string;
+                    fk_miembro?: string;
                 };
                 header?: never;
                 path?: never;
@@ -584,6 +586,7 @@ export interface paths {
             parameters: {
                 query?: {
                     nMonths?: string;
+                    fk_miembro?: string;
                 };
                 header?: never;
                 path?: never;
@@ -619,7 +622,9 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    fk_miembro?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -656,6 +661,7 @@ export interface paths {
             parameters: {
                 query?: {
                     nMonths?: string;
+                    fk_miembro?: string;
                 };
                 header?: never;
                 path?: never;
@@ -693,6 +699,7 @@ export interface paths {
             parameters: {
                 query?: {
                     nMonths?: string;
+                    fk_miembro?: string;
                 };
                 header?: never;
                 path?: never;
@@ -835,6 +842,89 @@ export interface paths {
         };
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/miembros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    todos?: "true" | "false";
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description People in the caller's family */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Miembro"][];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMiembro"];
+                };
+            };
+            responses: {
+                /** @description Miembro updated (admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateMiembro"];
+                };
+            };
+            responses: {
+                /** @description Miembro created (admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
         delete?: never;
         options?: never;
         head?: never;
@@ -1320,11 +1410,16 @@ export interface components {
             fk_categoria: number | null;
             fk_proyecto: number | null;
             fk_user: number;
+            fk_miembro: number | null;
             categoria: {
                 id: number;
                 descripcion: string;
             } | null;
             proyecto: {
+                id: number;
+                nombre: string;
+            } | null;
+            miembro: {
                 id: number;
                 nombre: string;
             } | null;
@@ -1342,6 +1437,7 @@ export interface components {
         CreateDocumento: {
             fk_categoria: number | null;
             fk_proyecto?: number | null;
+            fk_miembro?: number | null;
             fk_tipoDoc: number;
             proposito: string;
             monto: number;
@@ -1351,6 +1447,7 @@ export interface components {
             id: number;
             fk_categoria: number | null;
             fk_proyecto?: number | null;
+            fk_miembro?: number | null;
             fk_tipoDoc: number;
             proposito: string;
             monto: number;
@@ -1481,6 +1578,25 @@ export interface components {
         };
         DeleteAsset: {
             id: number;
+        };
+        Miembro: {
+            id: number;
+            nombre: string;
+            activo: boolean;
+            orden: number | null;
+            tieneLogin: boolean;
+            /** @enum {string|null} */
+            rol: "admin" | "miembro" | null;
+        };
+        CreateMiembro: {
+            nombre: string;
+            orden?: number | null;
+        };
+        UpdateMiembro: {
+            id: number;
+            nombre: string;
+            activo: boolean;
+            orden?: number | null;
         };
         FoodItem: {
             id: number;

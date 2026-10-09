@@ -20,6 +20,7 @@ import {
 import { useLogout } from "@/api/hooks"
 import { getApiErrorMessage } from "@/lib/api-errors"
 import { useAppState, type LayoutOverride } from "@/AppState"
+import { FamiliaSettings } from "@/components/FamiliaSettings"
 
 function Htas() {
     let navigate = useNavigate();
@@ -43,7 +44,7 @@ function Htas() {
     // min-h-full fills the mobile shell's scroll area exactly; sm: keeps the
     // desktop behaviour, where the parent has no definite height.
     return (
-        <div className="flex min-h-full w-full items-center justify-center p-4 sm:min-h-svh">
+        <div className="flex min-h-full w-full flex-col items-center justify-center gap-4 p-4 sm:min-h-svh">
 
             <Card className="w-full max-w-87.5">
                 <CardHeader>
@@ -77,6 +78,7 @@ function Htas() {
                     </Button>
                 </CardContent>
             </Card>
+            <FamiliaSettings />
         </div>
     )
 }

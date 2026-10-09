@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { toast } from "sonner"
-import { useDocumento, useSaveDocumento, useDeleteDocumento, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
+import { useDocumento, useSaveDocumento, useDeleteDocumento, useMiembros, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -31,10 +31,11 @@ import {
 import { NumberInput } from './NumberInput';
 import { ComboboxCategorias } from './ComboboxCategorias';
 import { ComboboxProyectos } from './ComboboxProyectos';
+import { ComboboxMiembros } from './ComboboxMiembros';
 import { CuotasPicker } from './CuotasPicker';
 import { Documento } from '@/models/Documento';
 
-/** Only this tipoDoc carries a categoria and a proyecto. */
+/** Only this tipoDoc carries a categoria, a proyecto and a "para" miembro. */
 const TIPO_DOC_GASTO = 1;
 
 /** Past this many tipos the segmented control gets cramped, so fall back to a Select. */
@@ -56,6 +57,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
     const { data: tipoDocs = [] } = useTipoDocs()
+    const { data: miembros = [] } = useMiembros()
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
@@ -64,6 +66,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // Last categoria the classifier filled in, so the field can say so
     const [categoriaSugerida, setCategoriaSugerida] = useState<number>(0);
     const [proyecto, setProyecto] = useState<number>(0);
+    const [miembro, setMiembro] = useState<number>(0);
     const [cuotas, setCuotas] = useState<number>(0);
 
     const isEditMode = !!initialData;
@@ -76,6 +79,10 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // Use fresh data if available, otherwise use initialData
     const docData = freshData ?? initialData;
 
+    // With only one person in the family there is nobody else a gasto could be for;
+    // a gasto that already has a miembro keeps the field so it can be changed or cleared.
+    const showPara = miembros.length > 1 || !!docData?.miembro;
+
     useEffect(() => {
         if (isOpen) {
             setCategoriaSugerida(0);
@@ -87,6 +94,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(docData.fk_tipoDoc);
                 setCategoria(docData.fk_categoria ?? 0);
                 setProyecto(docData.fk_proyecto ?? 0);
+                setMiembro(docData.fk_miembro ?? 0);
                 setCuotas(0);
             } else {
                 // New document mode: reset to defaults
@@ -96,6 +104,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(TIPO_DOC_GASTO);
                 setCategoria(0);
                 setProyecto(0);
+                setMiembro(0);
                 setCuotas(0);
             }
         }
@@ -173,17 +182,19 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 fk_tipoDoc: tipoDoc,
                 fk_categoria: isGasto ? categoria : null,
                 fk_proyecto: isGasto && proyecto > 0 ? proyecto : null,
+                fk_miembro: isGasto && miembro > 0 ? miembro : null,
             }));
             saveMutation.mutate(payloads);
             return;
         }
-        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; fk_proyecto: number | null } = {
+        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; fk_proyecto: number | null; fk_miembro: number | null } = {
             monto,
             proposito,
             fecha: fecha.toFormat('yyyy-MM-dd'),
             fk_tipoDoc: tipoDoc,
             fk_categoria: isGasto ? categoria : null,
-            fk_proyecto: isGasto && proyecto > 0 ? proyecto : null
+            fk_proyecto: isGasto && proyecto > 0 ? proyecto : null,
+            fk_miembro: isGasto && miembro > 0 ? miembro : null
         };
         if (isEditMode) {
             payload.id = initialData!.id;
@@ -364,6 +375,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                             onChange={setProyecto}
                                         />
                                     </div>
+                                    {showPara && (
+                                        <div className="grid gap-1.5">
+                                            <Label>
+                                                Para <span className="font-normal text-muted-foreground">(opcional)</span>
+                                            </Label>
+                                            <ComboboxMiembros
+                                                value={miembro}
+                                                onChange={setMiembro}
+                                                current={docData?.miembro}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         )}

@@ -21,8 +21,9 @@ export function useDocumentos(filters: DocumentFilters, enabled: boolean = true)
             const { data } = await api.get<Documento[]>('/documentos', {
                 params: {
                     ...filters,
-                    // A categoria of 0 means "all" and must be omitted, not sent
+                    // A categoria / miembro of 0 means "all" and must be omitted, not sent
                     fk_categoria: filters.fk_categoria || undefined,
+                    fk_miembro: filters.fk_miembro || undefined,
                 },
             });
             return data;

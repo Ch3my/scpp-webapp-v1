@@ -10,6 +10,7 @@ import { Slider } from "./ui/slider";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import numeral from "numeral";
 import { useMonthlyGraph } from "@/api/hooks";
+import { useDashboardMiembro } from "@/components/dashboard-miembro";
 import type { MonthlyGraphData } from "@/models/MonthlyGraphData";
 import { useLayoutMode } from "@/shell/useLayoutMode";
 
@@ -50,9 +51,11 @@ function MonthlyGraphChart(_props: unknown, ref: React.Ref<unknown>) {
         return () => clearTimeout(timer);
     }, [offset]);
 
+    const miembroId = useDashboardMiembro();
     const { data: monthlyGraphData, isLoading, refetch } = useMonthlyGraph(
         debouncedNMonths,
-        debouncedOffset
+        debouncedOffset,
+        miembroId
     );
 
     // Keep ref for backwards compatibility

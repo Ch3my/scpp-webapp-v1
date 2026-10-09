@@ -10,6 +10,9 @@ import { Documento } from '@/models/Documento';
 import { CirclePlus, ListRestart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DocsFilters } from '@/components/DocsFilters';
+import { MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
+import { formatFechaCorta } from '@/lib/format-fecha';
 import {
     Table,
     TableBody,
@@ -44,6 +47,8 @@ const Dashboard: React.FC = () => {
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
     const [selectedTipoDoc, setSelectedTipoDoc] = useState<number>(1);
+    // 'Para' filter, shared by the list and every chart; 0 = everyone
+    const [selectedMiembro, setSelectedMiembro] = useState<number>(0);
     const [selectedDoc, setSelectedDoc] = useState<Documento | null>(null);
     const [searchPhrase, setSearchPhrase] = useState<string>('');
     const [searchPhraseIgnoreOtherFilters, setSearchPhraseIgnoreOtherFilters] = useState<boolean>(true)
@@ -59,7 +64,8 @@ const Dashboard: React.FC = () => {
         fk_tipoDoc: selectedTipoDoc,
         searchPhraseIgnoreOtherFilters,
         fk_categoria: selectedCategoria > 0 ? selectedCategoria : null,
-    }), [fechaInicio, fechaTermino, searchPhrase, selectedTipoDoc, searchPhraseIgnoreOtherFilters, selectedCategoria]);
+        fk_miembro: selectedMiembro > 0 ? selectedMiembro : null,
+    }), [fechaInicio, fechaTermino, searchPhrase, selectedTipoDoc, searchPhraseIgnoreOtherFilters, selectedCategoria, selectedMiembro]);
 
     const { data: docs = [], isLoading, isPlaceholderData } = useDocumentos(filters);
 
@@ -118,6 +124,7 @@ const Dashboard: React.FC = () => {
             if (resetAll) {
                 setSearchPhraseIgnoreOtherFilters(true)
                 setSelectedCategoria(0)
+                setSelectedMiembro(0)
                 setSearchPhrase("")
             }
         });
@@ -161,17 +168,23 @@ const Dashboard: React.FC = () => {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
+                    <MiembroFilterSelect
+                        value={selectedMiembro}
+                        onChange={(v) => startFilterTransition(() => setSelectedMiembro(v))}
+                    />
                     <DocRecord initialData={selectedDoc} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
                 </div>
                 <Label>Total: ${numeral(totalDocs).format("0,0")}</Label>
 
                 <div className='overflow-auto'>
-                    <Table size='compact'>
+                    {/* table-fixed: column widths come from the header, so a long proposito or a
+                        'para' badge truncates instead of widening the list */}
+                    <Table size='compact' className='table-fixed'>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-25">Fecha</TableHead>
+                                <TableHead className="w-16">Fecha</TableHead>
                                 <TableHead>Proposito</TableHead>
-                                <TableHead className="text-right">Monto</TableHead>
+                                <TableHead className="w-24 text-right">Monto</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody style={{ opacity: isShowingStale ? 0.5 : 1, transition: 'opacity 0.2s' }}>
@@ -181,15 +194,21 @@ const Dashboard: React.FC = () => {
                                 </TableRow>)}
                             {docs.map((doc, index) => (
                                 <TableRow key={index} onClick={() => !isShowingStale && handleRowClick(doc)} style={{ cursor: isShowingStale ? 'not-allowed' : 'pointer' }}>
-                                    <TableCell>{doc.fecha}</TableCell>
-                                    <TableCell>{doc.proposito}</TableCell>
-                                    <TableCell className="text-right">{numeral(doc.monto).format("0,0")}</TableCell>
+                                    <TableCell className="whitespace-nowrap tabular-nums" title={doc.fecha}>{formatFechaCorta(doc.fecha)}</TableCell>
+                                    <TableCell>
+                                        <span className="flex min-w-0 items-center gap-2">
+                                            <span className="min-w-0 truncate" title={doc.proposito}>{doc.proposito}</span>
+                                            {doc.miembro && <MiembroBadge nombre={doc.miembro.nombre} className="max-w-[40%] shrink-0 text-xs" />}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-right tabular-nums">{numeral(doc.monto).format("0,0")}</TableCell>
                                 </TableRow>
                             ))}
                         </TableBody>
                     </Table>
                 </div>
             </div>
+            <DashboardMiembroProvider value={selectedMiembro}>
             <div className="grid gap-2 overflow-auto h-full">
                 <Suspense fallback={null}>
                     <div className="grid gap-2 items-center" style={{ gridTemplateColumns: "minmax(16rem, 5fr) 3fr 6fr" }} >
@@ -210,6 +229,7 @@ const Dashboard: React.FC = () => {
                     </div>
                 </Suspense>
             </div>
+            </DashboardMiembroProvider>
         </div>
     );
 };

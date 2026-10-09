@@ -19,11 +19,14 @@ import { cn } from '@/lib/utils';
 
 import DocRecord from '@/components/DocRecord';
 import { DocsFilters } from '@/components/DocsFilters';
+import { MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
 
 import { Documento } from '@/models/Documento';
 import { useDocumentos, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 import { getPercentageColor } from '@/lib/percentage-color';
 import { useShellScroll } from '@/shell/ShellScroll';
+import { formatFecha } from '@/lib/format-fecha';
 
 /**
  * Charts are lazy AND behind a tab, so a phone only pays for Recharts when the
@@ -43,17 +46,6 @@ const TIPO_DOC_INGRESO = 3;
 
 type Tab = 'documentos' | 'graficos';
 
-/**
- * '2026-10-13' -> '13 oct'. The locale is passed explicitly because
- * Settings.defaultLocale is only set inside the lazy chart modules, which have
- * not necessarily loaded on this tab.
- */
-function formatFecha(fecha: string, withYear = false) {
-    const parsed = DateTime.fromFormat(fecha, 'yyyy-MM-dd');
-    if (!parsed.isValid) return fecha;
-    return parsed.toFormat(withYear ? 'dd MMM yyyy' : 'dd MMM', { locale: 'es' });
-}
-
 const MobileDashboard = () => {
     const { data: tipoDocs = [] } = useTipoDocs();
 
@@ -62,6 +54,8 @@ const MobileDashboard = () => {
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState(0);
     const [selectedTipoDoc, setSelectedTipoDoc] = useState(1);
+    // 'Para' filter, shared by both tabs; 0 = everyone
+    const [selectedMiembro, setSelectedMiembro] = useState(0);
     const [searchPhrase, setSearchPhrase] = useState('');
     const [searchPhraseIgnoreOtherFilters, setSearchPhraseIgnoreOtherFilters] = useState(true);
 
@@ -76,6 +70,7 @@ const MobileDashboard = () => {
             fk_tipoDoc: selectedTipoDoc,
             searchPhraseIgnoreOtherFilters,
             fk_categoria: selectedCategoria > 0 ? selectedCategoria : null,
+            fk_miembro: selectedMiembro > 0 ? selectedMiembro : null,
         }),
         [
             fechaInicio,
@@ -84,6 +79,7 @@ const MobileDashboard = () => {
             selectedTipoDoc,
             searchPhraseIgnoreOtherFilters,
             selectedCategoria,
+            selectedMiembro,
         ]
     );
 
@@ -101,10 +97,14 @@ const MobileDashboard = () => {
      * gastos over ingresos - but switching tipo resets the date range
      * (handleTipoDocChange below), so the figure moved and looked as though the
      * tipo drove it. It is a spending metric, so it belongs with Gastos only.
+     *
+     * Hidden for a 'para' filter too, for the categoria reason: ingresos are not
+     * 'para' anyone, so one person's gastos have no denominator.
      */
     const showPorcentaje =
         selectedTipoDoc === TIPO_DOC_GASTO &&
         selectedCategoria === 0 &&
+        selectedMiembro === 0 &&
         searchPhrase.trim() === '';
 
     const rangeFilters = useMemo<DocumentFilters>(
@@ -169,6 +169,7 @@ const MobileDashboard = () => {
         if (resetAll) {
             setSearchPhraseIgnoreOtherFilters(true);
             setSelectedCategoria(0);
+            setSelectedMiembro(0);
             setSearchPhrase('');
         }
     };
@@ -192,7 +193,14 @@ const MobileDashboard = () => {
 
     return (
         // pb clears the FAB, so the last card is never trapped underneath it
+        <DashboardMiembroProvider value={selectedMiembro}>
         <div className="flex flex-col gap-3 p-3 pb-20">
+            {/* Above the tabs because it narrows both: the list and every chart */}
+            <MiembroFilterSelect
+                value={selectedMiembro}
+                onChange={setSelectedMiembro}
+                className="min-h-11 w-full"
+            />
             <div role="tablist" className="bg-muted flex rounded-lg p-1">
                 {(
                     [
@@ -399,6 +407,12 @@ const MobileDashboard = () => {
                                                                     </span>
                                                                 </Badge>
                                                             )}
+                                                            {doc.miembro && (
+                                                                <MiembroBadge
+                                                                    nombre={doc.miembro.nombre}
+                                                                    className="text-sm"
+                                                                />
+                                                            )}
                                                         </span>
                                                     </span>
                                                     <span className="text-foreground shrink-0 text-lg font-bold tabular-nums">
@@ -454,6 +468,7 @@ const MobileDashboard = () => {
                 }}
             />
         </div>
+        </DashboardMiembroProvider>
     );
 };
 

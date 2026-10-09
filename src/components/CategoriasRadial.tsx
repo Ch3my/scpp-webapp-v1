@@ -12,6 +12,7 @@ import { Skeleton } from "./ui/skeleton"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card"
 import { useMemo } from "react"
 import { useExpensesByCategory } from "@/api/hooks"
+import { useDashboardMiembro } from "@/components/dashboard-miembro";
 
 const chartConfig = {
     desktop: {
@@ -24,7 +25,8 @@ function CategoriasRadial(_props: unknown, ref: React.Ref<unknown>) {
     const fechaInicio = DateTime.now();
 
     // nMonths=0 means the current month only
-    const { data: result, isLoading, refetch } = useExpensesByCategory(0);
+    const miembroId = useDashboardMiembro();
+    const { data: result, isLoading, refetch } = useExpensesByCategory(0, miembroId);
 
     const chartData = useMemo(
         () => (result?.data ?? []).slice(0, 6).map((item) => ({

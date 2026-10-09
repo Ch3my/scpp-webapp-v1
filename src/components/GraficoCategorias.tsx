@@ -14,6 +14,7 @@ import { useExpensesByCategory } from "@/api/hooks";
 import { Button } from "./ui/button";
 import { ButtonGroup } from "./ui/button-group";
 import { Slider } from "./ui/slider";
+import { useDashboardMiembro } from "@/components/dashboard-miembro";
 
 const chartConfig = {
     desktop: {
@@ -78,7 +79,8 @@ const GraficoCategoriasNew = forwardRef<GraficoCategoriasRef, GraficoCategoriasP
         const [nMonths, setNMonths] = useState<number>(3);
         const [visibleCount, setVisibleCount] = useState<number | null>(null);
 
-        const { data: result, isLoading, refetch } = useExpensesByCategory(nMonths);
+        const miembroId = useDashboardMiembro();
+        const { data: result, isLoading, refetch } = useExpensesByCategory(nMonths, miembroId);
 
         // Reshaped for Recharts: { label, data, catId } -> { category, amount, catId }
         const allChartData: ChartDataItem[] = useMemo(

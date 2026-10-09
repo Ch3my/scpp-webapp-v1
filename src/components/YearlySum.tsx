@@ -6,9 +6,11 @@ import { CardHeader, CardDescription, CardTitle, Card, CardContent } from './ui/
 import { DateTime } from 'luxon';
 import { useMemo } from 'react';
 import { useYearlySum } from '@/api/hooks';
+import { useDashboardMiembro } from '@/components/dashboard-miembro';
 
 function YearlySum(_props: unknown, ref: React.Ref<unknown>) {
-  const { data: result, isLoading, refetch } = useYearlySum(12);
+  const miembroId = useDashboardMiembro();
+  const { data: result, isLoading, refetch } = useYearlySum(12, miembroId);
 
   const data = useMemo(() => {
     if (!result) return undefined;

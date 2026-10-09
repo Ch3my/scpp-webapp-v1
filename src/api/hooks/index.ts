@@ -13,6 +13,8 @@ export {
 
 export { useProyectos, useSaveProyecto, useDeleteProyecto } from './useProyectos';
 
+export { useMiembros, useSaveMiembro } from './useMiembros';
+
 export { useAssets, useAsset, useCreateAsset, useDeleteAsset } from './useAssets';
 
 export {

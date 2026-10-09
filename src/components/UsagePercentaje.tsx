@@ -4,6 +4,7 @@ import { Skeleton } from './ui/skeleton';
 import { Card, CardContent, CardHeader } from './ui/card';
 import { useMemo } from 'react';
 import { useCurrMonthSpending, type CurrentMonthSpendingResponse } from '@/api/hooks';
+import { useDashboardMiembro } from '@/components/dashboard-miembro';
 import { getPercentageColor } from '@/lib/percentage-color';
 import { useLayoutMode } from '@/shell/useLayoutMode';
 
@@ -19,7 +20,8 @@ function UsagePercentage(_props: unknown, ref: React.Ref<unknown>) {
     const containerRef = useRef<HTMLDivElement>(null);
     const listRef = useRef<HTMLDivElement>(null);
 
-    const { data: result, isLoading, refetch } = useCurrMonthSpending();
+    const miembroId = useDashboardMiembro();
+    const { data: result, isLoading, refetch } = useCurrMonthSpending(miembroId);
 
     const data = useMemo(() => {
         if (!result) return null;

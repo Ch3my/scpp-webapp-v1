@@ -14,6 +14,8 @@ export interface DocumentFilters {
     fk_tipoDoc?: number;
     fk_categoria?: number | null;
     fk_proyecto?: number;
+    /** Only gastos "para" this miembro; 0/null means everyone */
+    fk_miembro?: number | null;
     searchPhrase?: string;
     searchPhraseIgnoreOtherFilters?: boolean;
 }
@@ -29,18 +31,20 @@ export const queryKeys = {
     // UI renders (admin-only screens), so it is a query.
     me: ['me'] as const,
 
+    // Every series takes the dashboard's "para" filter (miembroId, 0 = everyone),
+    // so each person's figures are cached separately and switching back is instant.
     dashboard: {
         all: ['dashboard'] as const,
-        monthlyGraph: (nMonths: number) =>
-            [...queryKeys.dashboard.all, 'monthly-graph', { nMonths }] as const,
-        expensesByCategory: (nMonths: number) =>
-            [...queryKeys.dashboard.all, 'expenses-by-category', { nMonths }] as const,
-        expensesByCategoryTimeseries: (nMonths: number) =>
-            [...queryKeys.dashboard.all, 'expenses-by-category-timeseries', { nMonths }] as const,
-        currMonthSpending: () =>
-            [...queryKeys.dashboard.all, 'curr-month-spending'] as const,
-        yearlySum: (nMonths: number) =>
-            [...queryKeys.dashboard.all, 'yearly-sum', { nMonths }] as const,
+        monthlyGraph: (nMonths: number, miembroId = 0) =>
+            [...queryKeys.dashboard.all, 'monthly-graph', { nMonths, miembroId }] as const,
+        expensesByCategory: (nMonths: number, miembroId = 0) =>
+            [...queryKeys.dashboard.all, 'expenses-by-category', { nMonths, miembroId }] as const,
+        expensesByCategoryTimeseries: (nMonths: number, miembroId = 0) =>
+            [...queryKeys.dashboard.all, 'expenses-by-category-timeseries', { nMonths, miembroId }] as const,
+        currMonthSpending: (miembroId = 0) =>
+            [...queryKeys.dashboard.all, 'curr-month-spending', { miembroId }] as const,
+        yearlySum: (nMonths: number, miembroId = 0) =>
+            [...queryKeys.dashboard.all, 'yearly-sum', { nMonths, miembroId }] as const,
     },
 
     documentos: {
@@ -88,6 +92,12 @@ export const queryKeys = {
         all: ['api-keys'] as const,
         lists: () => [...queryKeys.apiKeys.all, 'list'] as const,
         list: () => [...queryKeys.apiKeys.lists()] as const,
+    },
+
+    miembros: {
+        all: ['miembros'] as const,
+        /** `todos` includes deactivated ones (the admin's management list) */
+        list: (todos: boolean) => [...queryKeys.miembros.all, 'list', { todos }] as const,
     },
 
     lookups: {
