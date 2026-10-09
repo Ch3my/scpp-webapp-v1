@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { toast } from "sonner"
-import { useDocumento, useSaveDocumento, useDeleteDocumento, useMiembros, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
+import { useDocumento, useSaveDocumento, useDeleteDocumento, useHasMultipleLogins, useMe, useMiembros, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -58,6 +58,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
 
     const { data: tipoDocs = [] } = useTipoDocs()
     const { data: miembros = [] } = useMiembros()
+    const { data: me } = useMe()
+    const hasMultipleLogins = useHasMultipleLogins()
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
@@ -82,6 +84,12 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // With only one person in the family there is nobody else a gasto could be for;
     // a gasto that already has a miembro keeps the field so it can be changed or cleared.
     const showPara = miembros.length > 1 || !!docData?.miembro;
+
+    // A miembro may only change gastos they entered themselves. The server refuses the
+    // rest anyway; saying so up front beats a form that fails on Guardar.
+    const readOnly = isEditMode && me?.rol === 'miembro' && docData?.fk_user !== me.user.id;
+    // Who entered it only means something once more than one person can log in
+    const showAutor = isEditMode && !!docData?.user && hasMultipleLogins;
 
     useEffect(() => {
         if (isOpen) {
@@ -161,6 +169,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     };
 
     const handleSave = () => {
+        if (readOnly) return;
         if (tipoDoc == 0) {
             toast('Debe seleccionar un tipo de documento');
             return;
@@ -245,13 +254,21 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             <Dialog open={isOpen} onOpenChange={handleDialogChange}>
                 <DialogContent className="gap-3 p-5 sm:max-w-lg">
                     <DialogHeader className="gap-0">
-                        <DialogTitle>{isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
-                        <DialogDescription className="sr-only">
-                            {/* To avoid anoying warning */}
-                        </DialogDescription>
+                        <DialogTitle>{readOnly ? 'Ver Documento' : isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
+                        {showAutor || readOnly ? (
+                            <DialogDescription className="text-xs">
+                                Registrado por {docData?.user.nombre}
+                                {readOnly && ' · solo lectura'}
+                            </DialogDescription>
+                        ) : (
+                            <DialogDescription className="sr-only">
+                                {/* To avoid anoying warning */}
+                            </DialogDescription>
+                        )}
                     </DialogHeader>
 
-                    <div className="grid gap-3">
+                    {/* A disabled fieldset disables every input, button and combobox inside it */}
+                    <fieldset disabled={readOnly} className="grid min-w-0 gap-3">
                         {/* Tipo decides which fields exist below it, so it leads the form */}
                         <div className="grid gap-1.5">
                             <Label className="text-xs tracking-wide text-muted-foreground uppercase">Tipo de documento</Label>
@@ -390,9 +407,12 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </fieldset>
 
                     <DialogFooter>
+                        {readOnly ? (
+                            <Button variant="outline" onClick={() => handleDialogChange(false)}>Cerrar</Button>
+                        ) : (
                         <div className="flex flex-col gap-1.5 sm:items-end">
                             <div className="flex w-full items-center justify-end gap-2">
                                 {isEditMode && (
@@ -420,6 +440,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 para guardar
                             </span>
                         </div>
+                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

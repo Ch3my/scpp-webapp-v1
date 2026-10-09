@@ -27,7 +27,9 @@ html {
 }
 
 .grid-docs-layout {
-    grid-template-columns: 2fr 3fr;
+    /* Documents list : charts. The list side was 2fr; 2.2fr gives it ~2 points more
+       of the width at every breakpoint without crowding the charts. */
+    grid-template-columns: 2.2fr 3fr;
 }
 
 
@@ -39,13 +41,13 @@ html {
  */
 @media (min-width: 1200px) {
     .grid-docs-layout {
-        grid-template-columns: 2fr 4fr;
+        grid-template-columns: 2.2fr 4fr;
     }
 
 }
 
 @media (min-width: 1400px) {
     .grid-docs-layout {
-        grid-template-columns: 2fr 5fr;
+        grid-template-columns: 2.2fr 5fr;
     }
 }

@@ -1,16 +1,16 @@
 import { useState, useMemo, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
-import { useDocumentos, useTipoDocs, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useHasMultipleLogins, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { Label } from '@/components/ui/label';
 import DocRecord from '@/components/DocRecord';
 import { Documento } from '@/models/Documento';
-import { CirclePlus, ListRestart } from 'lucide-react';
+import { CirclePlus, ListRestart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DocsFilters } from '@/components/DocsFilters';
-import { MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { AutorBadge, MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
 import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
 import { formatFechaCorta } from '@/lib/format-fecha';
 import {
@@ -43,6 +43,7 @@ const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/Expens
 
 const Dashboard: React.FC = () => {
     const { data: tipoDocs = [] } = useTipoDocs()
+    const showAutor = useHasMultipleLogins()
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
@@ -153,8 +154,15 @@ const Dashboard: React.FC = () => {
                     </Button>
                     <DocsFilters onFiltersChange={handleFiltersChange} fechaInicio={fechaInicio} fechaTermino={fechaTermino}
                         categoria={selectedCategoria} searchPhrase={searchPhrase} searchPhraseIgnoreOtherFilters={searchPhraseIgnoreOtherFilters} />
+                    {/* data-[size=default]: the trigger's own height is set through that variant,
+                        so a plain h-10 would lose to it. 40px matches the buttons beside them. */}
+                    <MiembroFilterSelect
+                        className="data-[size=default]:h-10"
+                        value={selectedMiembro}
+                        onChange={(v) => startFilterTransition(() => setSelectedMiembro(v))}
+                    />
                     <Select value={selectedTipoDoc.toString()} onValueChange={(e) => handleTipoDocChange(e, false)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="data-[size=default]:h-10">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -168,10 +176,6 @@ const Dashboard: React.FC = () => {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <MiembroFilterSelect
-                        value={selectedMiembro}
-                        onChange={(v) => startFilterTransition(() => setSelectedMiembro(v))}
-                    />
                     <DocRecord initialData={selectedDoc} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
                 </div>
                 <Label>Total: ${numeral(totalDocs).format("0,0")}</Label>
@@ -183,18 +187,28 @@ const Dashboard: React.FC = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-16">Fecha</TableHead>
+                                {showAutor && (
+                                    <TableHead className="w-10 px-0" title="Registrado por">
+                                        <User className="mx-auto size-3.5" aria-hidden />
+                                        <span className="sr-only">Registrado por</span>
+                                    </TableHead>
+                                )}
                                 <TableHead>Proposito</TableHead>
-                                <TableHead className="w-24 text-right">Monto</TableHead>
+                                {/* Fits "9,000,000" and no more: 9 digit-widths (ch, in the cell's own font;
+                                    the commas are narrower than a digit) plus the 2 x 0.5rem cell padding */}
+                                <TableHead className="w-[calc(9ch+1rem)] text-right">Monto</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody style={{ opacity: isShowingStale ? 0.5 : 1, transition: 'opacity 0.2s' }}>
                             {docs.length === 0 && !isLoading && (
                                 <TableRow className='text-center text-muted-foreground'>
-                                    <TableCell colSpan={3}>Sin Datos</TableCell>
+                                    <TableCell colSpan={showAutor ? 4 : 3}>Sin Datos</TableCell>
                                 </TableRow>)}
                             {docs.map((doc, index) => (
                                 <TableRow key={index} onClick={() => !isShowingStale && handleRowClick(doc)} style={{ cursor: isShowingStale ? 'not-allowed' : 'pointer' }}>
                                     <TableCell className="whitespace-nowrap tabular-nums" title={doc.fecha}>{formatFechaCorta(doc.fecha)}</TableCell>
+                                    {/* As narrow as the 3-letter tag allows: no cell padding, minimal badge padding */}
+                                    {showAutor && <TableCell className="px-0 text-center"><AutorBadge nombre={doc.user.nombre} abreviatura={doc.user.abreviatura} className="px-1" /></TableCell>}
                                     <TableCell>
                                         <span className="flex min-w-0 items-center gap-2">
                                             <span className="min-w-0 truncate" title={doc.proposito}>{doc.proposito}</span>

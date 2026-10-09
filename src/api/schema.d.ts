@@ -154,6 +154,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ChangePassword"];
+                };
+            };
+            responses: {
+                /** @description Password changed; every other session of the user is signed out */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/documentos": {
         parameters: {
             query?: never;
@@ -931,6 +970,68 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/miembros/acceso": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateAcceso"];
+                };
+            };
+            responses: {
+                /** @description A miembro's role, access or password changed (admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GrantAcceso"];
+                };
+            };
+            responses: {
+                /** @description Login created for a miembro (admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/food/items": {
         parameters: {
             query?: never;
@@ -1401,6 +1502,10 @@ export interface components {
             rol: "admin" | "miembro";
             isSuperAdmin: boolean;
         };
+        ChangePassword: {
+            actual: string;
+            nueva: string;
+        };
         Documento: {
             id: number;
             fk_tipoDoc: number;
@@ -1426,6 +1531,7 @@ export interface components {
             user: {
                 id: number;
                 nombre: string;
+                abreviatura: string;
             };
             tipoDoc: {
                 id: number;
@@ -1586,21 +1692,45 @@ export interface components {
         Miembro: {
             id: number;
             nombre: string;
+            abreviatura: string;
+            abreviaturaPropia: string | null;
             activo: boolean;
             orden: number | null;
             tieneLogin: boolean;
             /** @enum {string|null} */
             rol: "admin" | "miembro" | null;
+            puedeIngresar: boolean;
+            emailAddress: string | null;
         };
         CreateMiembro: {
             nombre: string;
+            abreviatura?: string | null;
             orden?: number | null;
         };
         UpdateMiembro: {
             id: number;
             nombre: string;
+            abreviatura?: string | null;
             activo: boolean;
             orden?: number | null;
+        };
+        GrantAcceso: {
+            id: number;
+            /** Format: email */
+            emailAddress: string;
+            password: string;
+            /**
+             * @default miembro
+             * @enum {string}
+             */
+            rol: "admin" | "miembro";
+        };
+        UpdateAcceso: {
+            id: number;
+            /** @enum {string} */
+            rol?: "admin" | "miembro";
+            puedeIngresar?: boolean;
+            password?: string;
         };
         FoodItem: {
             id: number;

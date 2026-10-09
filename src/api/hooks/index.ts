@@ -13,7 +13,13 @@ export {
 
 export { useProyectos, useSaveProyecto, useDeleteProyecto } from './useProyectos';
 
-export { useMiembros, useSaveMiembro } from './useMiembros';
+export {
+    useMiembros,
+    useSaveMiembro,
+    useSaveAcceso,
+    useChangePassword,
+    useHasMultipleLogins,
+} from './useMiembros';
 
 export { useAssets, useAsset, useCreateAsset, useDeleteAsset } from './useAssets';
 

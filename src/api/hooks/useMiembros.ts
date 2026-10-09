@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import api from '../client';
 import { queryKeys } from '../queryKeys';
-import type { Miembro, CreateMiembro, UpdateMiembro } from '@/models/Miembro';
+import type { Miembro, CreateMiembro, UpdateMiembro, GrantAcceso, UpdateAcceso } from '@/models/Miembro';
 
 /**
  * People in the caller's family. The default (active only) is what a "para" picker
@@ -35,4 +35,43 @@ export function useSaveMiembro() {
             queryClient.invalidateQueries({ queryKey: queryKeys.documentos.lists() });
         },
     });
+}
+
+/**
+ * Admin only: give a miembro a login (POST) or change one (PUT: role, access on/off,
+ * password reset). The server refuses an admin changing their own access.
+ */
+export function useSaveAcceso() {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (payload: { grant: GrantAcceso } | { update: UpdateAcceso }) => {
+            const { data } = 'grant' in payload
+                ? await api.post('/miembros/acceso', payload.grant)
+                : await api.put('/miembros/acceso', payload.update);
+            return data;
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.miembros.all });
+        },
+    });
+}
+
+/** Change the caller's own password; the current one is required. */
+export function useChangePassword() {
+    return useMutation({
+        mutationFn: async (payload: { actual: string; nueva: string }) => {
+            const { data } = await api.put('/me/password', payload);
+            return data;
+        },
+    });
+}
+
+/**
+ * Whether more than one person in the family can log in - the point at which "who
+ * entered this gasto" becomes worth showing.
+ */
+export function useHasMultipleLogins(): boolean {
+    const { data: miembros = [] } = useMiembros();
+    return miembros.filter((m) => m.tieneLogin).length > 1;
 }

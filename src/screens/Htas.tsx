@@ -20,13 +20,18 @@ import {
 import { useLogout } from "@/api/hooks"
 import { getApiErrorMessage } from "@/lib/api-errors"
 import { useAppState, type LayoutOverride } from "@/AppState"
+import { cn } from "@/lib/utils"
 import { FamiliaSettings } from "@/components/FamiliaSettings"
+import { ChangePasswordCard } from "@/components/ChangePasswordCard"
+import ScreenTitle from "@/components/ScreenTitle"
+import { useLayoutMode } from "@/shell/useLayoutMode"
 
 function Htas() {
     let navigate = useNavigate();
     const logout = useLogout();
     const layoutOverride = useAppState((state) => state.layoutOverride);
     const setLayoutOverride = useAppState((state) => state.setLayoutOverride);
+    const isDesktop = useLayoutMode() === "desktop";
 
     const handleLogout = () => {
         logout.mutate(undefined, {
@@ -41,15 +46,20 @@ function Htas() {
         });
     };
 
-    // min-h-full fills the mobile shell's scroll area exactly; sm: keeps the
-    // desktop behaviour, where the parent has no definite height.
+    // Desktop: tiles - two columns (Familia spanning both, its rows need the width),
+    // three side by side on wide screens; items-start keeps each card at its own
+    // height. Mobile layout: always one column, whatever the screen width, so a
+    // tablet or a forced-mobile desktop reads like the phone does.
     return (
-        <div className="flex min-h-full w-full flex-col items-center justify-center gap-4 p-4 sm:min-h-svh">
+        <div className={cn("mx-auto w-full p-4", isDesktop ? "max-w-6xl sm:p-6" : "max-w-xl")}>
+            {/* The mobile shell already titles the screen in its header */}
+            {isDesktop && <ScreenTitle title="Opciones" />}
+            <div className={cn("mt-2 grid items-start gap-4", isDesktop && "sm:grid-cols-2 xl:grid-cols-3")}>
 
-            <Card className="w-full max-w-87.5">
+            <Card className="w-full">
                 <CardHeader>
-                    <CardTitle>Opciones</CardTitle>
-                    <CardDescription></CardDescription>
+                    <CardTitle>General</CardTitle>
+                    <CardDescription>Apariencia y sesion en este dispositivo.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
@@ -78,7 +88,9 @@ function Htas() {
                     </Button>
                 </CardContent>
             </Card>
-            <FamiliaSettings />
+            <ChangePasswordCard />
+            <FamiliaSettings className={cn(isDesktop && "sm:col-span-2 xl:col-span-1")} />
+            </div>
         </div>
     )
 }

@@ -38,6 +38,9 @@ interface FilterDialogProps {
         searchPhrase: string
         searchPhraseIgnoreOtherFilters: boolean
     }) => void
+
+    /** Extra classes for the trigger button, to match the toolbar it sits in */
+    triggerClassName?: string
 }
 
 export function DocsFilters({
@@ -47,6 +50,7 @@ export function DocsFilters({
     searchPhrase,
     searchPhraseIgnoreOtherFilters,
     onFiltersChange,
+    triggerClassName,
 }: FilterDialogProps) {
     const [open, setOpen] = React.useState(false)
     const [localFechaInicio, setLocalFechaInicio] = React.useState<DateTime>(fechaInicio)
@@ -90,7 +94,7 @@ export function DocsFilters({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="outline">
+                <Button variant="outline" className={triggerClassName}>
                     <Filter />
                 </Button>
             </DialogTrigger>

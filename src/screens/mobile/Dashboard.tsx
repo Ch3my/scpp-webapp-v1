@@ -19,11 +19,11 @@ import { cn } from '@/lib/utils';
 
 import DocRecord from '@/components/DocRecord';
 import { DocsFilters } from '@/components/DocsFilters';
-import { MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { AutorBadge, MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
 import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
 
 import { Documento } from '@/models/Documento';
-import { useDocumentos, useTipoDocs, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useHasMultipleLogins, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 import { getPercentageColor } from '@/lib/percentage-color';
 import { useShellScroll } from '@/shell/ShellScroll';
 import { formatFecha } from '@/lib/format-fecha';
@@ -48,6 +48,7 @@ type Tab = 'documentos' | 'graficos';
 
 const MobileDashboard = () => {
     const { data: tipoDocs = [] } = useTipoDocs();
+    const showAutor = useHasMultipleLogins();
 
     const [tab, setTab] = useState<Tab>('documentos');
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
@@ -195,12 +196,6 @@ const MobileDashboard = () => {
         // pb clears the FAB, so the last card is never trapped underneath it
         <DashboardMiembroProvider value={selectedMiembro}>
         <div className="flex flex-col gap-3 p-3 pb-20">
-            {/* Above the tabs because it narrows both: the list and every chart */}
-            <MiembroFilterSelect
-                value={selectedMiembro}
-                onChange={setSelectedMiembro}
-                className="min-h-11 w-full"
-            />
             <div role="tablist" className="bg-muted flex rounded-lg p-1">
                 {(
                     [
@@ -250,6 +245,14 @@ const MobileDashboard = () => {
                             categoria={selectedCategoria}
                             searchPhrase={searchPhrase}
                             searchPhraseIgnoreOtherFilters={searchPhraseIgnoreOtherFilters}
+                            // 44px like every other control in this row
+                            triggerClassName="min-h-11"
+                        />
+                        {/* Also narrows the Graficos tab, which keeps the selection */}
+                        <MiembroFilterSelect
+                            value={selectedMiembro}
+                            onChange={setSelectedMiembro}
+                            className="h-auto min-h-11"
                         />
                         <Select
                             value={selectedTipoDoc.toString()}
@@ -411,6 +414,14 @@ const MobileDashboard = () => {
                                                                 <MiembroBadge
                                                                     nombre={doc.miembro.nombre}
                                                                     className="text-sm"
+                                                                />
+                                                            )}
+                                                            {/* Smaller text keeps it discreet; leading-5 gives it the
+                                                                same 20px line, so it matches the text-sm badges' height */}
+                                                            {showAutor && (
+                                                                <AutorBadge
+                                                                    nombre={doc.user.nombre}
+                                                                    className="text-xs leading-5"
                                                                 />
                                                             )}
                                                         </span>

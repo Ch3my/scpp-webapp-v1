@@ -7,3 +7,5 @@ import type { components } from "@/api/schema";
 export type Miembro = components["schemas"]["Miembro"];
 export type CreateMiembro = components["schemas"]["CreateMiembro"];
 export type UpdateMiembro = components["schemas"]["UpdateMiembro"];
+export type GrantAcceso = components["schemas"]["GrantAcceso"];
+export type UpdateAcceso = components["schemas"]["UpdateAcceso"];

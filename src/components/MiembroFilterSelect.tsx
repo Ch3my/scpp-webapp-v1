@@ -21,18 +21,32 @@ interface MiembroFilterSelectProps {
 }
 
 /**
- * Dashboard "para" filter. Renders nothing while the family has a single person,
- * because then there is nobody to filter by.
+ * Dashboard "para" filter, as an icon-only trigger so it fits any toolbar. The icon
+ * turns primary while a person is selected, and the tooltip names them. Renders
+ * nothing while the family has a single person, because then there is nobody to
+ * filter by.
  */
 export function MiembroFilterSelect({ value, onChange, className }: MiembroFilterSelectProps) {
   const { data: miembros = [] } = useMiembros()
   if (miembros.length < 2) return null
 
+  const selected = miembros.find((m) => m.id === value)
+  const label = selected ? `Para: ${selected.nombre}` : "Para: todos"
+
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
-      <SelectTrigger className={className} aria-label="Para">
-        <User className="opacity-60" />
-        <SelectValue />
+      <SelectTrigger
+        aria-label={label}
+        title={label}
+        className={cn("w-auto shrink-0 gap-1 px-2.5", selected && "border-primary text-primary", className)}
+      >
+        {/* Explicit colour: the trigger otherwise mutes any icon without one, and it
+            should read like the white icons on the buttons beside it */}
+        <User className={cn(selected ? "text-primary" : "text-foreground")} />
+        {/* Radix needs the value rendered to track the selection; it stays off screen */}
+        <span className="sr-only">
+          <SelectValue />
+        </span>
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
@@ -64,6 +78,32 @@ export function MiembroBadge({ nombre, className }: { nombre: string; className?
     >
       <User className="size-3 shrink-0" />
       <span className="truncate">{nombre}</span>
+    </Badge>
+  )
+}
+
+/**
+ * Who entered a gasto, as a quiet outline tag - deliberately less prominent than the
+ * "para" badge, which is the information people act on. With `abreviatura` it shows
+ * that instead of the name (the desktop column); the full name is always the tooltip.
+ * The abbreviation comes from the server, which owns the fallback rule.
+ */
+export function AutorBadge({
+  nombre,
+  abreviatura,
+  className,
+}: {
+  nombre: string
+  abreviatura?: string
+  className?: string
+}) {
+  return (
+    <Badge
+      variant="outline"
+      title={`Registrado por ${nombre}`}
+      className={cn("text-muted-foreground min-w-0 border-border/70 px-1.5 py-0 font-normal", className)}
+    >
+      <span className="truncate">{abreviatura ?? nombre}</span>
     </Badge>
   )
 }
