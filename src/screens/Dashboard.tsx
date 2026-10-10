@@ -1,6 +1,6 @@
 import { useState, useMemo, useTransition, lazy, Suspense } from 'react';
 import ScreenTitle from '@/components/ScreenTitle';
-import { useDocumentos, useHasMultipleLogins, useTipoDocs, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useHasMultiplePeople, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
@@ -10,7 +10,7 @@ import { Documento } from '@/models/Documento';
 import { CirclePlus, ListRestart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DocsFilters } from '@/components/DocsFilters';
-import { AutorBadge, MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { MiembroFilterSelect, PersonaBadge } from '@/components/MiembroFilterSelect';
 import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
 import { formatFechaCorta } from '@/lib/format-fecha';
 import {
@@ -43,7 +43,7 @@ const ExpensesByCategoryTimeseriesChart = lazy(() => import('@/components/Expens
 
 const Dashboard: React.FC = () => {
     const { data: tipoDocs = [] } = useTipoDocs()
-    const showAutor = useHasMultipleLogins()
+    const showPersona = useHasMultiplePeople()
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
     const [fechaTermino, setFechaTermino] = useState<DateTime>(DateTime.now().endOf('month'));
     const [selectedCategoria, setSelectedCategoria] = useState<number>(0);
@@ -187,10 +187,10 @@ const Dashboard: React.FC = () => {
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="w-16">Fecha</TableHead>
-                                {showAutor && (
-                                    <TableHead className="w-10 px-0" title="Registrado por">
+                                {showPersona && (
+                                    <TableHead className="w-10 px-0" title="Persona">
                                         <User className="mx-auto size-3.5" aria-hidden />
-                                        <span className="sr-only">Registrado por</span>
+                                        <span className="sr-only">Persona</span>
                                     </TableHead>
                                 )}
                                 <TableHead>Proposito</TableHead>
@@ -202,17 +202,16 @@ const Dashboard: React.FC = () => {
                         <TableBody style={{ opacity: isShowingStale ? 0.5 : 1, transition: 'opacity 0.2s' }}>
                             {docs.length === 0 && !isLoading && (
                                 <TableRow className='text-center text-muted-foreground'>
-                                    <TableCell colSpan={showAutor ? 4 : 3}>Sin Datos</TableCell>
+                                    <TableCell colSpan={showPersona ? 4 : 3}>Sin Datos</TableCell>
                                 </TableRow>)}
                             {docs.map((doc, index) => (
                                 <TableRow key={index} onClick={() => !isShowingStale && handleRowClick(doc)} style={{ cursor: isShowingStale ? 'not-allowed' : 'pointer' }}>
                                     <TableCell className="whitespace-nowrap tabular-nums" title={doc.fecha}>{formatFechaCorta(doc.fecha)}</TableCell>
                                     {/* As narrow as the 3-letter tag allows: no cell padding, minimal badge padding */}
-                                    {showAutor && <TableCell className="px-0 text-center"><AutorBadge nombre={doc.user.nombre} abreviatura={doc.user.abreviatura} className="px-1" /></TableCell>}
+                                    {showPersona && <TableCell className="px-0 text-center"><PersonaBadge nombre={doc.miembro.nombre} abreviatura={doc.miembro.abreviatura} className="px-1" /></TableCell>}
                                     <TableCell>
                                         <span className="flex min-w-0 items-center gap-2">
                                             <span className="min-w-0 truncate" title={doc.proposito}>{doc.proposito}</span>
-                                            {doc.miembro && <MiembroBadge nombre={doc.miembro.nombre} className="max-w-[40%] shrink-0 text-xs" />}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right tabular-nums">{numeral(doc.monto).format("0,0")}</TableCell>

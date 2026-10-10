@@ -1,7 +1,7 @@
 import type { components } from "@/api/schema";
 
 /**
- * A person in the family: who a gasto can be "para". Label-only miembros (kids,
+ * A person in the family: who a gasto can belong to. Label-only miembros (kids,
  * say) have `tieneLogin: false` and no `rol`.
  */
 export type Miembro = components["schemas"]["Miembro"];

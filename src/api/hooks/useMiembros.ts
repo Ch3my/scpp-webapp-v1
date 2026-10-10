@@ -4,7 +4,7 @@ import { queryKeys } from '../queryKeys';
 import type { Miembro, CreateMiembro, UpdateMiembro, GrantAcceso, UpdateAcceso } from '@/models/Miembro';
 
 /**
- * People in the caller's family. The default (active only) is what a "para" picker
+ * People in the caller's family. The default (active only) is what the person picker
  * offers; `todos` adds deactivated ones and is honoured for admins only.
  */
 export function useMiembros(todos: boolean = false) {
@@ -68,10 +68,10 @@ export function useChangePassword() {
 }
 
 /**
- * Whether more than one person in the family can log in - the point at which "who
- * entered this gasto" becomes worth showing.
+ * Whether the family has more than one (active) person - the point at which showing
+ * whose a gasto is, and letting the admin pick it, starts to mean something.
  */
-export function useHasMultipleLogins(): boolean {
+export function useHasMultiplePeople(): boolean {
     const { data: miembros = [] } = useMiembros();
-    return miembros.filter((m) => m.tieneLogin).length > 1;
+    return miembros.length > 1;
 }

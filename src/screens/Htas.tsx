@@ -23,6 +23,7 @@ import { useAppState, type LayoutOverride } from "@/AppState"
 import { cn } from "@/lib/utils"
 import { FamiliaSettings } from "@/components/FamiliaSettings"
 import { ChangePasswordCard } from "@/components/ChangePasswordCard"
+import { PlataformaSettings } from "@/components/PlataformaSettings"
 import ScreenTitle from "@/components/ScreenTitle"
 import { useLayoutMode } from "@/shell/useLayoutMode"
 
@@ -90,6 +91,8 @@ function Htas() {
             </Card>
             <ChangePasswordCard />
             <FamiliaSettings className={cn(isDesktop && "sm:col-span-2 xl:col-span-1")} />
+            {/* Super-admins only; renders nothing for everyone else */}
+            <PlataformaSettings className={cn(isDesktop && "sm:col-span-2 xl:col-span-1")} />
             </div>
         </div>
     )

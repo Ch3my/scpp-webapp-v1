@@ -21,7 +21,7 @@ interface MiembroFilterSelectProps {
 }
 
 /**
- * Dashboard "para" filter, as an icon-only trigger so it fits any toolbar. The icon
+ * Dashboard person filter, as an icon-only trigger so it fits any toolbar. The icon
  * turns primary while a person is selected, and the tooltip names them. Renders
  * nothing while the family has a single person, because then there is nobody to
  * filter by.
@@ -31,7 +31,7 @@ export function MiembroFilterSelect({ value, onChange, className }: MiembroFilte
   if (miembros.length < 2) return null
 
   const selected = miembros.find((m) => m.id === value)
-  const label = selected ? `Para: ${selected.nombre}` : "Para: todos"
+  const label = selected ? `Persona: ${selected.nombre}` : "Persona: todos"
 
   return (
     <Select value={String(value)} onValueChange={(v) => onChange(Number(v))}>
@@ -50,7 +50,7 @@ export function MiembroFilterSelect({ value, onChange, className }: MiembroFilte
       </SelectTrigger>
       <SelectContent>
         <SelectGroup>
-          <SelectLabel>Para</SelectLabel>
+          <SelectLabel>Persona</SelectLabel>
           <SelectItem value="0">Todos</SelectItem>
           {miembros.map((m) => (
             <SelectItem key={m.id} value={String(m.id)}>
@@ -64,31 +64,12 @@ export function MiembroFilterSelect({ value, onChange, className }: MiembroFilte
 }
 
 /**
- * Who a gasto is "para", as a small tag. Shared by the desktop table and the mobile
- * cards so the two never drift apart.
+ * Whose a gasto is, as a quiet outline tag. With `abreviatura` it shows that instead of
+ * the name (the narrow desktop column); the full name is always the tooltip. Shared by
+ * the desktop table and the mobile cards so the two never drift apart. The
+ * abbreviation comes from the server, which owns the fallback rule.
  */
-export function MiembroBadge({ nombre, className }: { nombre: string; className?: string }) {
-  return (
-    <Badge
-      variant="outline"
-      className={cn(
-        "bg-chart-2/10 text-chart-2 min-w-0 gap-1 border-transparent px-2 py-0 font-normal",
-        className
-      )}
-    >
-      <User className="size-3 shrink-0" />
-      <span className="truncate">{nombre}</span>
-    </Badge>
-  )
-}
-
-/**
- * Who entered a gasto, as a quiet outline tag - deliberately less prominent than the
- * "para" badge, which is the information people act on. With `abreviatura` it shows
- * that instead of the name (the desktop column); the full name is always the tooltip.
- * The abbreviation comes from the server, which owns the fallback rule.
- */
-export function AutorBadge({
+export function PersonaBadge({
   nombre,
   abreviatura,
   className,
@@ -100,7 +81,7 @@ export function AutorBadge({
   return (
     <Badge
       variant="outline"
-      title={`Registrado por ${nombre}`}
+      title={nombre}
       className={cn("text-muted-foreground min-w-0 border-border/70 px-1.5 py-0 font-normal", className)}
     >
       <span className="truncate">{abreviatura ?? nombre}</span>

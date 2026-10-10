@@ -1032,6 +1032,87 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/familias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Every family with member counts and admins (super-admin only, no financial data) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["FamiliaAdmin"][];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateFamilia"];
+                };
+            };
+            responses: {
+                /** @description Family renamed (super-admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateFamilia"];
+                };
+            };
+            responses: {
+                /** @description Family and its first admin created (super-admin only) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["SuccessResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/food/items": {
         parameters: {
             query?: never;
@@ -1515,7 +1596,7 @@ export interface components {
             fk_categoria: number | null;
             fk_proyecto: number | null;
             fk_user: number;
-            fk_miembro: number | null;
+            fk_miembro: number;
             categoria: {
                 id: number;
                 descripcion: string;
@@ -1525,10 +1606,6 @@ export interface components {
                 nombre: string;
             } | null;
             miembro: {
-                id: number;
-                nombre: string;
-            } | null;
-            user: {
                 id: number;
                 nombre: string;
                 abreviatura: string;
@@ -1547,7 +1624,7 @@ export interface components {
         CreateDocumento: {
             fk_categoria: number | null;
             fk_proyecto?: number | null;
-            fk_miembro?: number | null;
+            fk_miembro?: number;
             fk_tipoDoc: number;
             proposito: string;
             monto: number;
@@ -1557,7 +1634,7 @@ export interface components {
             id: number;
             fk_categoria: number | null;
             fk_proyecto?: number | null;
-            fk_miembro?: number | null;
+            fk_miembro?: number;
             fk_tipoDoc: number;
             proposito: string;
             monto: number;
@@ -1731,6 +1808,30 @@ export interface components {
             rol?: "admin" | "miembro";
             puedeIngresar?: boolean;
             password?: string;
+        };
+        FamiliaAdmin: {
+            id: number;
+            nombre: string;
+            createdAt: string;
+            miembros: number;
+            logins: number;
+            admins: {
+                nombre: string;
+                emailAddress: string | null;
+            }[];
+        };
+        CreateFamilia: {
+            nombre: string;
+            admin: {
+                nombre: string;
+                /** Format: email */
+                emailAddress: string;
+                password: string;
+            };
+        };
+        UpdateFamilia: {
+            id: number;
+            nombre: string;
         };
         FoodItem: {
             id: number;

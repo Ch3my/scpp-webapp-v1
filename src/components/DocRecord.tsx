@@ -6,7 +6,7 @@ import { DatePicker } from './DatePicker';
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { toast } from "sonner"
-import { useDocumento, useSaveDocumento, useDeleteDocumento, useHasMultipleLogins, useMe, useMiembros, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
+import { useDocumento, useSaveDocumento, useDeleteDocumento, useHasMultiplePeople, useMe, useSugerirCategoria, useTipoDocs } from '@/api/hooks';
 import { cn } from '@/lib/utils';
 
 import {
@@ -35,7 +35,7 @@ import { ComboboxMiembros } from './ComboboxMiembros';
 import { CuotasPicker } from './CuotasPicker';
 import { Documento } from '@/models/Documento';
 
-/** Only this tipoDoc carries a categoria, a proyecto and a "para" miembro. */
+/** Only this tipoDoc carries a categoria and a proyecto. */
 const TIPO_DOC_GASTO = 1;
 
 /** Past this many tipos the segmented control gets cramped, so fall back to a Select. */
@@ -57,9 +57,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const isOpen = controlledIsOpen ?? uncontrolledIsOpen;
 
     const { data: tipoDocs = [] } = useTipoDocs()
-    const { data: miembros = [] } = useMiembros()
     const { data: me } = useMe()
-    const hasMultipleLogins = useHasMultipleLogins()
+    const hasMultiplePeople = useHasMultiplePeople()
     const [monto, setMonto] = useState<number>(0);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
@@ -68,6 +67,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // Last categoria the classifier filled in, so the field can say so
     const [categoriaSugerida, setCategoriaSugerida] = useState<number>(0);
     const [proyecto, setProyecto] = useState<number>(0);
+    // Whose documento this is (fk_miembro); 0 until /me says who "me" is
     const [miembro, setMiembro] = useState<number>(0);
     const [cuotas, setCuotas] = useState<number>(0);
 
@@ -81,15 +81,10 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     // Use fresh data if available, otherwise use initialData
     const docData = freshData ?? initialData;
 
-    // With only one person in the family there is nobody else a gasto could be for;
-    // a gasto that already has a miembro keeps the field so it can be changed or cleared.
-    const showPara = miembros.length > 1 || !!docData?.miembro;
-
-    // A miembro may only change gastos they entered themselves. The server refuses the
-    // rest anyway; saying so up front beats a form that fails on Guardar.
-    const readOnly = isEditMode && me?.rol === 'miembro' && docData?.fk_user !== me.user.id;
-    // Who entered it only means something once more than one person can log in
-    const showAutor = isEditMode && !!docData?.user && hasMultipleLogins;
+    // Who the documento belongs to. Only an admin chooses it, and only once there is
+    // more than one person; otherwise the server makes it the caller's own.
+    const canPickPerson = me?.rol === 'admin' && hasMultiplePeople;
+    const ownerField = canPickPerson && miembro > 0 ? { fk_miembro: miembro } : {};
 
     useEffect(() => {
         if (isOpen) {
@@ -102,7 +97,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(docData.fk_tipoDoc);
                 setCategoria(docData.fk_categoria ?? 0);
                 setProyecto(docData.fk_proyecto ?? 0);
-                setMiembro(docData.fk_miembro ?? 0);
+                setMiembro(docData.fk_miembro);
                 setCuotas(0);
             } else {
                 // New document mode: reset to defaults
@@ -112,11 +107,11 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(TIPO_DOC_GASTO);
                 setCategoria(0);
                 setProyecto(0);
-                setMiembro(0);
+                setMiembro(me?.miembro.id ?? 0);
                 setCuotas(0);
             }
         }
-    }, [isOpen, docData]);
+    }, [isOpen, docData, me?.miembro.id]);
 
     // Leaving the proposito field fills an empty categoria from the classifier.
     // A categoria that is already set - picked, saved, or suggested earlier - is
@@ -169,7 +164,6 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     };
 
     const handleSave = () => {
-        if (readOnly) return;
         if (tipoDoc == 0) {
             toast('Debe seleccionar un tipo de documento');
             return;
@@ -191,19 +185,19 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 fk_tipoDoc: tipoDoc,
                 fk_categoria: isGasto ? categoria : null,
                 fk_proyecto: isGasto && proyecto > 0 ? proyecto : null,
-                fk_miembro: isGasto && miembro > 0 ? miembro : null,
+                ...ownerField,
             }));
             saveMutation.mutate(payloads);
             return;
         }
-        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; fk_proyecto: number | null; fk_miembro: number | null } = {
+        const payload: { id?: number; monto: number; proposito: string; fecha: string; fk_tipoDoc: number; fk_categoria: number | null; fk_proyecto: number | null; fk_miembro?: number } = {
             monto,
             proposito,
             fecha: fecha.toFormat('yyyy-MM-dd'),
             fk_tipoDoc: tipoDoc,
             fk_categoria: isGasto ? categoria : null,
             fk_proyecto: isGasto && proyecto > 0 ? proyecto : null,
-            fk_miembro: isGasto && miembro > 0 ? miembro : null
+            ...ownerField,
         };
         if (isEditMode) {
             payload.id = initialData!.id;
@@ -254,21 +248,13 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
             <Dialog open={isOpen} onOpenChange={handleDialogChange}>
                 <DialogContent className="gap-3 p-5 sm:max-w-lg">
                     <DialogHeader className="gap-0">
-                        <DialogTitle>{readOnly ? 'Ver Documento' : isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
-                        {showAutor || readOnly ? (
-                            <DialogDescription className="text-xs">
-                                Registrado por {docData?.user.nombre}
-                                {readOnly && ' · solo lectura'}
-                            </DialogDescription>
-                        ) : (
-                            <DialogDescription className="sr-only">
-                                {/* To avoid anoying warning */}
-                            </DialogDescription>
-                        )}
+                        <DialogTitle>{isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
+                        <DialogDescription className="sr-only">
+                            {/* To avoid anoying warning */}
+                        </DialogDescription>
                     </DialogHeader>
 
-                    {/* A disabled fieldset disables every input, button and combobox inside it */}
-                    <fieldset disabled={readOnly} className="grid min-w-0 gap-3">
+                    <div className="grid gap-3">
                         {/* Tipo decides which fields exist below it, so it leads the form */}
                         <div className="grid gap-1.5">
                             <Label className="text-xs tracking-wide text-muted-foreground uppercase">Tipo de documento</Label>
@@ -392,11 +378,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                             onChange={setProyecto}
                                         />
                                     </div>
-                                    {showPara && (
+                                    {canPickPerson && (
                                         <div className="grid gap-1.5">
-                                            <Label>
-                                                Para <span className="font-normal text-muted-foreground">(opcional)</span>
-                                            </Label>
+                                            <Label>Persona</Label>
                                             <ComboboxMiembros
                                                 value={miembro}
                                                 onChange={setMiembro}
@@ -407,12 +391,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 </div>
                             </div>
                         )}
-                    </fieldset>
+                    </div>
 
                     <DialogFooter>
-                        {readOnly ? (
-                            <Button variant="outline" onClick={() => handleDialogChange(false)}>Cerrar</Button>
-                        ) : (
                         <div className="flex flex-col gap-1.5 sm:items-end">
                             <div className="flex w-full items-center justify-end gap-2">
                                 {isEditMode && (
@@ -440,7 +421,6 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                 para guardar
                             </span>
                         </div>
-                        )}
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

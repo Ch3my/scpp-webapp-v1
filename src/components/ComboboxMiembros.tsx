@@ -19,7 +19,7 @@ import {
 import { useMiembros } from "@/api/hooks"
 
 interface ComboboxMiembrosProps {
-  /** 0 means "nadie en particular" */
+  /** The miembro the gasto belongs to (0 only while it is still unknown) */
   value: number;
   onChange: (value: number) => void;
   /**
@@ -30,7 +30,7 @@ interface ComboboxMiembrosProps {
   disabled?: boolean;
 }
 
-/** "Para quién" picker: the active people in the caller's family. */
+/** Whose a gasto is: the active people in the caller's family (admin only). */
 export function ComboboxMiembros({ value, onChange, current, disabled }: ComboboxMiembrosProps) {
   const [open, setOpen] = React.useState(false)
   const { data: miembros = [] } = useMiembros()
@@ -71,18 +71,6 @@ export function ComboboxMiembros({ value, onChange, current, disabled }: Combobo
           <CommandInput className="h-9" placeholder="Buscar..." />
           <CommandList>
             <CommandEmpty>No encontrado</CommandEmpty>
-            <CommandGroup>
-              <CommandItem
-                value="(Nadie en particular)"
-                onSelect={() => {
-                  setOpen(false);
-                  onChange(0);
-                }}
-              >
-                <span className="text-muted-foreground italic">(Nadie en particular)</span>
-                <Check className={cn("ml-auto", value === 0 ? "opacity-100" : "opacity-0")} />
-              </CommandItem>
-            </CommandGroup>
             <CommandGroup className="max-h-50">
               {options.map((miembro) => (
                 <CommandItem
@@ -90,7 +78,8 @@ export function ComboboxMiembros({ value, onChange, current, disabled }: Combobo
                   value={`${miembro.nombre} ${miembro.id}`}
                   onSelect={() => {
                     setOpen(false);
-                    onChange(miembro.id === value ? 0 : miembro.id);
+                    // Picking the current one keeps it: a gasto always belongs to someone
+                    onChange(miembro.id);
                   }}
                 >
                   <span className={cn(!miembro.activo && "text-muted-foreground")}>

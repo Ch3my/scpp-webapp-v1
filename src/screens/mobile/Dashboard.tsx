@@ -19,11 +19,11 @@ import { cn } from '@/lib/utils';
 
 import DocRecord from '@/components/DocRecord';
 import { DocsFilters } from '@/components/DocsFilters';
-import { AutorBadge, MiembroBadge, MiembroFilterSelect } from '@/components/MiembroFilterSelect';
+import { MiembroFilterSelect, PersonaBadge } from '@/components/MiembroFilterSelect';
 import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
 
 import { Documento } from '@/models/Documento';
-import { useDocumentos, useHasMultipleLogins, useTipoDocs, type DocumentFilters } from '@/api/hooks';
+import { useDocumentos, useHasMultiplePeople, useTipoDocs, type DocumentFilters } from '@/api/hooks';
 import { getPercentageColor } from '@/lib/percentage-color';
 import { useShellScroll } from '@/shell/ShellScroll';
 import { formatFecha } from '@/lib/format-fecha';
@@ -48,7 +48,7 @@ type Tab = 'documentos' | 'graficos';
 
 const MobileDashboard = () => {
     const { data: tipoDocs = [] } = useTipoDocs();
-    const showAutor = useHasMultipleLogins();
+    const showPersona = useHasMultiplePeople();
 
     const [tab, setTab] = useState<Tab>('documentos');
     const [fechaInicio, setFechaInicio] = useState<DateTime>(DateTime.now().startOf('month'));
@@ -410,17 +410,11 @@ const MobileDashboard = () => {
                                                                     </span>
                                                                 </Badge>
                                                             )}
-                                                            {doc.miembro && (
-                                                                <MiembroBadge
-                                                                    nombre={doc.miembro.nombre}
-                                                                    className="text-sm"
-                                                                />
-                                                            )}
                                                             {/* Smaller text keeps it discreet; leading-5 gives it the
                                                                 same 20px line, so it matches the text-sm badges' height */}
-                                                            {showAutor && (
-                                                                <AutorBadge
-                                                                    nombre={doc.user.nombre}
+                                                            {showPersona && (
+                                                                <PersonaBadge
+                                                                    nombre={doc.miembro.nombre}
                                                                     className="text-xs leading-5"
                                                                 />
                                                             )}

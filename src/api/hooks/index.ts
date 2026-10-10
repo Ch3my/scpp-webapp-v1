@@ -1,4 +1,5 @@
 export { useLogin, useLogout, useMe } from './useAuth';
+export { useFamiliasAdmin, useSaveFamilia } from './useAdmin';
 export type { Me } from './useAuth';
 export { useCategorias, useTipoDocs } from './useLookups';
 
@@ -18,7 +19,7 @@ export {
     useSaveMiembro,
     useSaveAcceso,
     useChangePassword,
-    useHasMultipleLogins,
+    useHasMultiplePeople,
 } from './useMiembros';
 
 export { useAssets, useAsset, useCreateAsset, useDeleteAsset } from './useAssets';

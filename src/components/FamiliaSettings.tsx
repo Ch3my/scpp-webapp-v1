@@ -20,7 +20,7 @@ import type { Miembro } from "@/models/Miembro"
 import { AccesoDialog } from "@/components/AccesoDialog"
 
 /**
- * Settings -> Familia: the people a gasto can be "para". Admin only; the server
+ * Settings -> Familia: the people a gasto can belong to. Admin only; the server
  * refuses writes from anyone else regardless.
  *
  * People are added without a login (kids, say); the key button gives one, or manages

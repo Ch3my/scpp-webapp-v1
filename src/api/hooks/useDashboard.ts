@@ -23,7 +23,7 @@ export type YearlySumResponse = Schemas['YearlySumResponse'];
  * concern. These hooks only own fetching and caching.
  */
 
-/** `miembroId` 0 means everyone; anything else narrows to gastos "para" that miembro. */
+/** `miembroId` 0 means everyone; anything else narrows to that miembro's gastos. */
 const miembroParam = (miembroId: number) => (miembroId ? { fk_miembro: miembroId } : {});
 
 export function useMonthlyGraph(nMonths: number, offset: number = 0, miembroId: number = 0) {

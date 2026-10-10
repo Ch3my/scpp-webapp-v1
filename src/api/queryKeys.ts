@@ -14,7 +14,7 @@ export interface DocumentFilters {
     fk_tipoDoc?: number;
     fk_categoria?: number | null;
     fk_proyecto?: number;
-    /** Only gastos "para" this miembro; 0/null means everyone */
+    /** Only this miembro's gastos; 0/null means everyone */
     fk_miembro?: number | null;
     searchPhrase?: string;
     searchPhraseIgnoreOtherFilters?: boolean;
@@ -31,7 +31,7 @@ export const queryKeys = {
     // UI renders (admin-only screens), so it is a query.
     me: ['me'] as const,
 
-    // Every series takes the dashboard's "para" filter (miembroId, 0 = everyone),
+    // Every series takes the dashboard's person filter (miembroId, 0 = everyone),
     // so each person's figures are cached separately and switching back is instant.
     dashboard: {
         all: ['dashboard'] as const,
@@ -92,6 +92,12 @@ export const queryKeys = {
         all: ['api-keys'] as const,
         lists: () => [...queryKeys.apiKeys.all, 'list'] as const,
         list: () => [...queryKeys.apiKeys.lists()] as const,
+    },
+
+    // Platform administration (super-admins only)
+    admin: {
+        all: ['admin'] as const,
+        familias: () => [...queryKeys.admin.all, 'familias'] as const,
     },
 
     miembros: {

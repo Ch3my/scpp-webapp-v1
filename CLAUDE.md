@@ -115,10 +115,10 @@ Note `assets.routes.ts` needs **both** `use('/assets', requireSession)` and
 `GET /assets/{id}` served images unauthenticated (verified: the request reached the handler).
 
 **Families and roles are enforced by the backend, not here.** Every row belongs to a familia;
-an `admin` sees the whole family, a `miembro` only gastos they entered or that are labelled as
-theirs. The server already narrows every list, total and write, so screens never filter by
+every gasto belongs to one person of the family (`fk_miembro`; the admin picks it, defaulting to
+themselves). An `admin` sees the whole family, a `miembro` only their own gastos. The server already narrows every list, total and write, so screens never filter by
 user themselves. `useMe()` (`GET /me`) gives `rol` for deciding what to *show* (admin-only
-screens). Never send `fk_user`/`fk_familia` in a body — the server takes them from the session.
+screens). Never send `fk_user`/`fk_familia` in a body (`fk_miembro` only from an admin) — the server takes them from the session.
 
 ### 4. Screens
 
