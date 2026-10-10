@@ -208,7 +208,8 @@ const Dashboard: React.FC = () => {
                                 <TableRow key={index} onClick={() => !isShowingStale && handleRowClick(doc)} style={{ cursor: isShowingStale ? 'not-allowed' : 'pointer' }}>
                                     <TableCell className="whitespace-nowrap tabular-nums" title={doc.fecha}>{formatFechaCorta(doc.fecha)}</TableCell>
                                     {/* As narrow as the 3-letter tag allows: no cell padding, minimal badge padding */}
-                                    {showPersona && <TableCell className="px-0 text-center"><PersonaBadge nombre={doc.miembro.nombre} abreviatura={doc.miembro.abreviatura} className="px-1" /></TableCell>}
+                                    {/* miembro can be missing on data from a backend older than single ownership: the cell stays empty */}
+                                    {showPersona && <TableCell className="px-0 text-center">{doc.miembro && <PersonaBadge nombre={doc.miembro.nombre} abreviatura={doc.miembro.abreviatura} className="px-1" />}</TableCell>}
                                     <TableCell>
                                         <span className="flex min-w-0 items-center gap-2">
                                             <span className="min-w-0 truncate" title={doc.proposito}>{doc.proposito}</span>

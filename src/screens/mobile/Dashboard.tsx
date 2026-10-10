@@ -412,7 +412,8 @@ const MobileDashboard = () => {
                                                             )}
                                                             {/* Smaller text keeps it discreet; leading-5 gives it the
                                                                 same 20px line, so it matches the text-sm badges' height */}
-                                                            {showPersona && (
+                                                            {/* miembro can be missing on data from a backend older than single ownership */}
+                                                            {showPersona && doc.miembro && (
                                                                 <PersonaBadge
                                                                     nombre={doc.miembro.nombre}
                                                                     className="text-xs leading-5"

@@ -97,7 +97,8 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setTipoDoc(docData.fk_tipoDoc);
                 setCategoria(docData.fk_categoria ?? 0);
                 setProyecto(docData.fk_proyecto ?? 0);
-                setMiembro(docData.fk_miembro);
+                // An older backend could send no owner; fall back to the caller, as the server does
+                setMiembro(docData.fk_miembro ?? me?.miembro.id ?? 0);
                 setCuotas(0);
             } else {
                 // New document mode: reset to defaults
