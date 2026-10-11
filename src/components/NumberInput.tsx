@@ -17,6 +17,7 @@ interface NumberInputProps {
   decimalSeparator?: string
   /** Extra classes merged onto the underlying input */
   className?: string
+  ref?: React.Ref<HTMLInputElement>
 }
 
 /**
@@ -34,6 +35,7 @@ export function NumberInput({
   thousandsSeparator = ",",
   decimalSeparator = ".",
   className,
+  ref,
 }: NumberInputProps) {
   const [displayValue, setDisplayValue] = React.useState("")
 
@@ -166,6 +168,7 @@ export function NumberInput({
 
   return (
     <Input
+      ref={ref}
       value={displayValue}
       onKeyDown={handleKeyDown}
       onChange={handleChange}

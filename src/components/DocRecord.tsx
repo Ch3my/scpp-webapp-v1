@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Label } from '@/components/ui/label';
 import { CirclePlus, Loader2, Sparkles, Tags, Trash2 } from "lucide-react"
 import { Input } from './ui/input';
@@ -60,6 +60,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const { data: me } = useMe()
     const hasMultiplePeople = useHasMultiplePeople()
     const [monto, setMonto] = useState<number>(0);
+    const montoRef = useRef<HTMLInputElement>(null);
     const [proposito, setProposito] = useState<string>('');
     const [fecha, setFecha] = useState<DateTime>(DateTime.now());
     const [tipoDoc, setTipoDoc] = useState<number>(TIPO_DOC_GASTO);
@@ -247,7 +248,15 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 </Button>
             )}
             <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-                <DialogContent className="gap-3 p-5 sm:max-w-lg">
+                <DialogContent
+                    className="gap-3 p-5 sm:max-w-lg"
+                    // Monto is what you type first; Radix would otherwise focus the first Tipo button
+                    onOpenAutoFocus={(e) => {
+                        e.preventDefault();
+                        montoRef.current?.focus();
+                        montoRef.current?.select();
+                    }}
+                >
                     <DialogHeader className="gap-0">
                         <DialogTitle>{isEditMode ? 'Editar Documento' : 'Agregar Documento'}</DialogTitle>
                         <DialogDescription className="sr-only">
@@ -305,6 +314,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                             <div className="relative">
                                 <span className="pointer-events-none absolute top-1/2 left-3 -translate-y-1/2 text-muted-foreground">$</span>
                                 <NumberInput
+                                    ref={montoRef}
                                     value={monto}
                                     onChange={setMonto}
                                     decimalPlaces={0}
