@@ -22,12 +22,12 @@ export default defineConfig(async () => ({
             // Don't split recharts - it has circular dependencies that break when chunked
             if (id.includes('react-query') || id.includes('@tanstack/query')) return 'react-query';
             if (id.includes('react-router') || id.includes('react-dom') || id.includes('react/')) return 'react-vendor';
-            if (id.includes('@radix-ui')) return 'radix';
-            if (id.includes('react-day-picker') ||
-                id.includes('numeral') ||
-                id.includes('luxon') ||
-                id.includes('zustand') ||
-                id.includes('axios')) return 'utils';
+            // Only libraries every cold start needs belong in a named group: a
+            // group is a single file, loaded whole by whichever screen touches
+            // any of it. There used to be 'radix' and 'utils' groups, which put
+            // every Radix primitive and the date picker (react-day-picker +
+            // date-fns) in front of the first paint. Everything else is left to
+            // rolldown, which places a library in the chunks that import it.
           }
         }
       },

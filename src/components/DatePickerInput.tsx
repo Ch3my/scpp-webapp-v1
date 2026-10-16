@@ -3,7 +3,7 @@ import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
+import { LazyCalendar } from "@/components/LazyCalendar";
 import {
     Popover,
     PopoverContent,
@@ -99,7 +99,7 @@ export const DatePickerInput: React.FC<
 
             {/* Calendar popover */}
             <PopoverContent align="end" className="w-auto p-0">
-                <Calendar
+                <LazyCalendar
                     mode="single"
                     captionLayout="dropdown"
                     selected={selectedDate?.toJSDate()}

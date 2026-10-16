@@ -5,7 +5,7 @@ import { useDocumentos, useHasMultiplePeople, useTipoDocs, type DocumentFilters 
 import { DateTime } from 'luxon';
 import numeral from 'numeral';
 import { Label } from '@/components/ui/label';
-import DocRecord from '@/components/DocRecord';
+import { LazyDocRecord } from '@/components/LazyDocRecord';
 import { Documento } from '@/models/Documento';
 import { CirclePlus, ListRestart, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -176,7 +176,7 @@ const Dashboard: React.FC = () => {
                             </SelectGroup>
                         </SelectContent>
                     </Select>
-                    <DocRecord initialData={selectedDoc} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
+                    <LazyDocRecord initialData={selectedDoc} isOpen={openDocDialog} hideButton={true} onOpenChange={docDialogOpenChange} />
                 </div>
                 <Label>Total: ${numeral(totalDocs).format("0,0")}</Label>
 

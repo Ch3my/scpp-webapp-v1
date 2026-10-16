@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
-import DocRecord from '@/components/DocRecord';
+import { LazyDocRecord } from '@/components/LazyDocRecord';
 import { DocsFilters } from '@/components/DocsFilters';
 import { MiembroFilterSelect, PersonaBadge } from '@/components/MiembroFilterSelect';
 import { DashboardMiembroProvider } from '@/components/dashboard-miembro';
@@ -464,7 +464,7 @@ const MobileDashboard = () => {
                 <CirclePlus className="size-6" />
             </Button>
 
-            <DocRecord
+            <LazyDocRecord
                 initialData={selectedDoc}
                 isOpen={openDocDialog}
                 hideButton={true}

@@ -3,7 +3,7 @@ import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { LazyCalendar } from "@/components/LazyCalendar";
 import {
     Popover,
     PopoverContent,
@@ -66,7 +66,7 @@ export const DatePicker: React.FC<DatePickerProps & { className?: string }> = ({
                 sideOffset={isMobile ? 4 : -40}
                 collisionPadding={isMobile ? 8 : undefined}
             >
-                <Calendar
+                <LazyCalendar
                     mode="single"
                     selected={selectedDate?.toJSDate()}
                     onSelect={handleSelect}

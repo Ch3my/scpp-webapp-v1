@@ -343,6 +343,12 @@ the app) exceeds workbox's 2 MiB default and would be silently dropped from the 
   import fails the build.
 - **Charts are lazy and behind a tab on mobile**, so a phone only pays for Recharts when the
   Gráficos tab is opened. Keep it that way.
+- **Keep the cold start lean.** Every screen is lazy (Dashboard included; its chunk is fetched
+  during the cache restore in `main.tsx`). `manualChunks` names only `react-vendor` and
+  `react-query` — a named group is one file loaded whole, and the old `radix`/`utils` groups put
+  the date picker and every Radix primitive in front of the first paint. UI that only exists after
+  a tap goes through a lazy wrapper: `LazyCalendar` (react-day-picker + date-fns) and
+  `LazyDocRecord` (the gasto dialog). Boot placeholder is `shell/BootSkeleton.tsx`, not a spinner.
 - **`openapi-typescript` is run via `npx`, not installed** — it peer-depends on TypeScript 5 and
   this repo is on 7. It only produces a committed artefact, so it needs no place in the tree.
 - Remaining `npm audit` findings are all dev-only (`serve`, `@tailwindcss/vite`); none ship in the

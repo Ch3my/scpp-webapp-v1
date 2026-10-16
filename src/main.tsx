@@ -6,7 +6,6 @@ import { Toaster } from "./components/ui/sonner";
 import { SidebarProvider, } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useAppState } from "./AppState";
-import Dashboard from "./screens/Dashboard";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { useIsRestoring } from '@tanstack/react-query'
 import { BootSkeleton } from "./shell/BootSkeleton";
@@ -27,8 +26,13 @@ import { setUnauthorizedHandler } from "./api/client";
 import { disablePageZoom } from "./lib/disable-page-zoom";
 import { registerServiceWorker } from "./lib/pwa";
 
-// Dashboard is eager - 90% of users auto-navigate to it from App.tsx
-// Lazy load other screens
+// Every screen is lazy, Dashboard included. It used to be eager because nearly
+// every start lands on it, but that put the desktop Dashboard and its whole
+// import tree (gasto dialog, calendar, combobox) in the entry chunk on phones
+// too. The landing screen's chunk is instead fetched during the cache restore
+// - see RootComponent.
+const loadDashboard = () => import("./screens/Dashboard");
+const Dashboard = lazy(loadDashboard);
 const Login = lazy(() => import("./screens/Login"));
 const Config = lazy(() => import("./screens/Config"));
 const Htas = lazy(() => import("./screens/Htas"));
@@ -38,8 +42,7 @@ const ApiKeys = lazy(() => import("./screens/ApiKeys"));
 const Proyectos = lazy(() => import("./screens/Proyectos"));
 
 // Mobile counterparts. Lazy on both sides, so a desktop session never fetches
-// these and a phone never fetches the dense desktop screens - except Dashboard,
-// which stays eager below for the 90% case that lands straight on it.
+// these and a phone never fetches the dense desktop screens.
 const loadMobileDashboard = () => import("./screens/mobile/Dashboard");
 const MobileDashboard = lazy(loadMobileDashboard);
 const MobileAssets = lazy(() => import("./screens/mobile/Assets"));
@@ -72,30 +75,33 @@ const RootComponent = () => {
   const layoutMode = useLayoutMode();
 
   /*
-   * A phone's landing screen is lazy, and React only asks for a lazy chunk
-   * when it renders - which is after the restore below. Fetch it during the
-   * restore instead, so the two waits overlap rather than queue. (Desktop's
-   * Dashboard is eager, so there is nothing to do there.)
+   * The landing screen is lazy, and React only asks for a lazy chunk when it
+   * renders - which is after the restore below. Fetch it during the restore
+   * instead, so the two waits overlap rather than queue.
    */
   React.useEffect(() => {
-    if (layoutMode !== "mobile") return;
     const { pathname } = window.location;
-    if (pathname === "/" || pathname === "/dashboard") void loadMobileDashboard();
+    if (pathname !== "/" && pathname !== "/dashboard") return;
+    void (layoutMode === "mobile" ? loadMobileDashboard() : loadDashboard());
   }, [layoutMode]);
 
-  // Prefetch FoodScreen in the background after dashboard settles
+  // Prefetch this layout's FoodScreen in the background after dashboard settles
   React.useEffect(() => {
     if (!isLoggedIn) return;
+    const prefetch = () =>
+      layoutMode === "mobile"
+        ? import("./screens/mobile/FoodScreen")
+        : import("./screens/FoodScreen");
     let cleanup: () => void;
     if (typeof window.requestIdleCallback === "function") {
-      const id = window.requestIdleCallback(() => import("./screens/FoodScreen"));
+      const id = window.requestIdleCallback(() => void prefetch());
       cleanup = () => window.cancelIdleCallback(id);
     } else {
-      const id = setTimeout(() => import("./screens/FoodScreen"), 1500);
+      const id = setTimeout(() => void prefetch(), 1500);
       cleanup = () => clearTimeout(id);
     }
     return cleanup;
-  }, [isLoggedIn]);
+  }, [isLoggedIn, layoutMode]);
 
   /*
    * Hold the routes until the persisted cache is in memory. Reading IndexedDB

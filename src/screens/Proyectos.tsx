@@ -18,7 +18,7 @@ import { ProyectosList } from '@/components/ProyectosList';
 import { ProyectoGastos } from '@/components/ProyectoGastos';
 import ProyectoRecord from '@/components/ProyectoRecord';
 import DeleteProyectoDialog from '@/components/DeleteProyectoDialog';
-import DocRecord from '@/components/DocRecord';
+import { LazyDocRecord } from '@/components/LazyDocRecord';
 
 import { Proyecto } from '@/models/Proyecto';
 import { Documento } from '@/models/Documento';
@@ -171,7 +171,7 @@ const Proyectos = () => {
                 onClose={() => setProyectoToDelete(null)}
                 onDeleted={handleDeleted}
             />
-            <DocRecord
+            <LazyDocRecord
                 initialData={selectedGasto}
                 isOpen={openDocDialog}
                 hideButton={true}
