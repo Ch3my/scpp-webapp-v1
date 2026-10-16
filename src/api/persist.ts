@@ -93,13 +93,36 @@ function shouldDehydrateQuery(query: Query) {
     return true;
 }
 
+const readItem = (key: string) => get<string>(key, store).then((v) => v ?? null);
+
+/**
+ * The restore's read, started when this module is evaluated instead of when
+ * PersistQueryClientProvider mounts and asks for it. On a phone cold start,
+ * opening IndexedDB is most of the restore, and this overlaps it with
+ * evaluating the rest of the bundle and rendering the first frame.
+ *
+ * Handed out once, to the first read. Any write or delete before then makes it
+ * stale, so it is dropped and the read goes to the database as normal.
+ */
+let earlyRead: Promise<string | null> | null = readItem(CACHE_KEY).catch(() => null);
+
 export const queryPersister = createAsyncStoragePersister({
     key: CACHE_KEY,
     throttleTime: THROTTLE_MS,
     storage: {
-        getItem: (key) => get<string>(key, store).then((v) => v ?? null),
-        setItem: (key, value) => set(key, value, store),
-        removeItem: (key) => del(key, store),
+        getItem: (key) => {
+            const pending = key === CACHE_KEY ? earlyRead : null;
+            earlyRead = null;
+            return pending ?? readItem(key);
+        },
+        setItem: (key, value) => {
+            earlyRead = null;
+            return set(key, value, store);
+        },
+        removeItem: (key) => {
+            earlyRead = null;
+            return del(key, store);
+        },
     },
 });
 

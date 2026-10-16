@@ -1,5 +1,6 @@
-import { useRef } from "react"
+import { Suspense, useRef } from "react"
 import { Outlet, useLocation } from "react-router"
+import { MobileScreenSkeleton } from "./BootSkeleton"
 import { BottomNav } from "./BottomNav"
 import { findNavItem } from "./nav-items"
 import { ShellScrollProvider } from "./ShellScroll"
@@ -45,7 +46,11 @@ export function MobileShell() {
                 {/* Lets a screen jump this area back to the top - e.g. when a
                     chart bar switches tabs and the content changes entirely. */}
                 <ShellScrollProvider scrollRef={scrollRef}>
-                    <Outlet />
+                    {/* Here rather than only at the root, so a lazy screen
+                        loading keeps the header and bottom bar on screen. */}
+                    <Suspense fallback={<MobileScreenSkeleton />}>
+                        <Outlet />
+                    </Suspense>
                 </ShellScrollProvider>
             </main>
 

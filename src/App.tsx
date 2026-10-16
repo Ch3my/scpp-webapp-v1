@@ -2,7 +2,7 @@ import { useEffect } from "react";
 
 import { useAppState } from "./AppState";
 import { useNavigate } from "react-router";
-import LoadingCircle from "./components/LoadingCircle";
+import { BootSkeleton } from "./shell/BootSkeleton";
 import api from "@/lib/api";
 import axios from "axios";
 import { toast } from "sonner";
@@ -83,9 +83,6 @@ export default function App() {
     void verifySession()
   }, []);
 
-  return (
-    <div className="h-screen w-screen">
-      <LoadingCircle />
-    </div>
-  )
+  return <BootSkeleton />
+
 }

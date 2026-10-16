@@ -7,10 +7,10 @@ import { SidebarProvider, } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { useAppState } from "./AppState";
 import Dashboard from "./screens/Dashboard";
-import { Skeleton } from "./components/ui/skeleton";
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { useIsRestoring } from '@tanstack/react-query'
-import LoadingCircle from "./components/LoadingCircle";
+import { BootSkeleton } from "./shell/BootSkeleton";
+import { useLayoutMode } from "./shell/useLayoutMode";
 import "./App.css";
 import "./Custom.css";
 import { RequireAuth } from "./components/RequireAuth";
@@ -40,7 +40,8 @@ const Proyectos = lazy(() => import("./screens/Proyectos"));
 // Mobile counterparts. Lazy on both sides, so a desktop session never fetches
 // these and a phone never fetches the dense desktop screens - except Dashboard,
 // which stays eager below for the 90% case that lands straight on it.
-const MobileDashboard = lazy(() => import("./screens/mobile/Dashboard"));
+const loadMobileDashboard = () => import("./screens/mobile/Dashboard");
+const MobileDashboard = lazy(loadMobileDashboard);
 const MobileAssets = lazy(() => import("./screens/mobile/Assets"));
 const MobileFoodScreen = lazy(() => import("./screens/mobile/FoodScreen"));
 const MobileProyectos = lazy(() => import("./screens/mobile/Proyectos"));
@@ -68,6 +69,19 @@ setUnauthorizedHandler(() => {
 const RootComponent = () => {
   const { isLoggedIn } = useAppState();
   const isRestoring = useIsRestoring();
+  const layoutMode = useLayoutMode();
+
+  /*
+   * A phone's landing screen is lazy, and React only asks for a lazy chunk
+   * when it renders - which is after the restore below. Fetch it during the
+   * restore instead, so the two waits overlap rather than queue. (Desktop's
+   * Dashboard is eager, so there is nothing to do there.)
+   */
+  React.useEffect(() => {
+    if (layoutMode !== "mobile") return;
+    const { pathname } = window.location;
+    if (pathname === "/" || pathname === "/dashboard") void loadMobileDashboard();
+  }, [layoutMode]);
 
   // Prefetch FoodScreen in the background after dashboard settles
   React.useEffect(() => {
@@ -91,28 +105,12 @@ const RootComponent = () => {
    * on a finance screen reads as data loss rather than as loading.
    */
   if (isRestoring) {
-    return (
-      <div className="h-screen w-screen">
-        <LoadingCircle />
-      </div>
-    );
+    return <BootSkeleton />;
   }
 
   return (
     <>
-      <Suspense fallback={
-        <div className="flex items-center justify-center h-screen w-screen p-8">
-          <div className="w-full max-w-4xl space-y-4">
-            <Skeleton className="h-12 w-3/4" />
-            <Skeleton className="h-64 w-full" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-5/6" />
-            </div>
-          </div>
-        </div>
-      }>
+      <Suspense fallback={<BootSkeleton />}>
         <Routes>
           <Route path="/" element={<App />} />
           <Route path="/login" element={<Login />} />
