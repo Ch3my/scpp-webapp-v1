@@ -1,5 +1,6 @@
 import * as React from "react"
 import { Input } from "./ui/input"
+import { cn } from "@/lib/utils"
 
 interface NumberInputProps {
   /** The numeric value to display (may be negative or decimal). */
@@ -17,6 +18,11 @@ interface NumberInputProps {
   decimalSeparator?: string
   /** Extra classes merged onto the underlying input */
   className?: string
+  /**
+   * Shows a ± button inside the field. The iPhone number pad has no minus key,
+   * so without it a negative cannot be typed there at all.
+   */
+  signToggle?: boolean
   ref?: React.Ref<HTMLInputElement>
 }
 
@@ -35,6 +41,7 @@ export function NumberInput({
   thousandsSeparator = ",",
   decimalSeparator = ".",
   className,
+  signToggle = false,
   ref,
 }: NumberInputProps) {
   const [displayValue, setDisplayValue] = React.useState("")
@@ -80,13 +87,9 @@ export function NumberInput({
       return
     }
 
-    // If user pressed '-', only allow if it's the first character
-    // and hasn't already typed one.
+    // '-' is allowed anywhere: handleChange treats it as a sign toggle, so it
+    // does not need the cursor parked before the first digit (fiddly on a phone)
     if (key === "-") {
-      if (currentTarget.selectionStart === 0 && !currentTarget.value.includes("-")) {
-        return
-      }
-      e.preventDefault()
       return
     }
 
@@ -118,7 +121,13 @@ export function NumberInput({
   // 3) OnChange => parse & format
   //
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const userInput = e.target.value
+    // Any '-' typed anywhere flips the sign: "1,234-" => "-1234", and a second
+    // '-' on "-1,234" cancels the existing one => "1234". Android soft keyboards
+    // mostly report keys as "Unidentified", so this has to work from the value
+    // rather than from handleKeyDown.
+    const rawInput = e.target.value
+    const minusCount = (rawInput.match(/-/g) ?? []).length
+    const userInput = (minusCount % 2 === 1 ? "-" : "") + rawInput.replace(/-/g, "")
 
     // If empty => pass NaN to parent, clear display
     if (userInput.trim() === "") {
@@ -166,14 +175,47 @@ export function NumberInput({
     setDisplayValue(formatted)
   }
 
-  return (
+  //
+  // 4) ± button: negate the value, or arm a sign on an empty field so the
+  //    digits typed next come out negative ("-" then "5" => -5)
+  //
+  const toggleSign = () => {
+    if (Number.isNaN(value) || value === null || value === undefined) {
+      setDisplayValue((current) => (current === "-" ? "" : "-"))
+      return
+    }
+    onChange(-value)
+  }
+
+  const input = (
     <Input
       ref={ref}
+      // Number pad on phones. Not type="number": that rejects the formatted
+      // display ("1,234") and would drop the thousands separators.
+      inputMode={decimalPlaces > 0 ? "decimal" : "numeric"}
       value={displayValue}
       onKeyDown={handleKeyDown}
       onChange={handleChange}
-      className={className}
+      className={cn(signToggle && "pr-12", className)}
     />
+  )
+
+  if (!signToggle) return input
+
+  return (
+    <div className="relative">
+      {input}
+      <button
+        type="button"
+        aria-label="Cambiar signo"
+        // Keeps focus in the input, so the phone keyboard stays open
+        onPointerDown={(e) => e.preventDefault()}
+        onClick={toggleSign}
+        className="absolute inset-y-0 right-0 flex w-11 items-center justify-center rounded-r-md text-muted-foreground hover:text-foreground active:bg-muted"
+      >
+        ±
+      </button>
+    </div>
   )
 }
 

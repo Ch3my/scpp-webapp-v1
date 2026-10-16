@@ -318,6 +318,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                     value={monto}
                                     onChange={setMonto}
                                     decimalPlaces={0}
+                                    signToggle
                                     className="pl-7 tabular-nums"
                                 />
                             </div>
