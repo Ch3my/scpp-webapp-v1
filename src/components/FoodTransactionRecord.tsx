@@ -211,7 +211,7 @@ const FoodTransactionRecord: React.FC<Props> = ({ onOpenChange, isOpen: controll
                     </Label>
                     <DatePickerInput value={bestBefore}
                         disabled={accion !== "restock"}
-                        onChange={(e) => e && setBestBefore(e)} />
+                        onChange={setBestBefore} />
                     <Label htmlFor="notas">
                         Notas
                     </Label>
