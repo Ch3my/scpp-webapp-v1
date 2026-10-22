@@ -67,6 +67,9 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const [categoria, setCategoria] = useState<number>(0);
     // Last categoria the classifier filled in, so the field can say so
     const [categoriaSugerida, setCategoriaSugerida] = useState<number>(0);
+    // Outcome of the last classifier call, so an empty answer is visible rather than silent
+    const [sugerenciaStatus, setSugerenciaStatus] = useState<'idle' | 'loading' | 'none' | 'error'>('idle');
+    const sugerenciaRequest = useRef(0);
     const [proyecto, setProyecto] = useState<number>(0);
     // Whose documento this is (fk_miembro); 0 until /me says who "me" is
     const [miembro, setMiembro] = useState<number>(0);
@@ -90,6 +93,7 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     useEffect(() => {
         if (isOpen) {
             setCategoriaSugerida(0);
+            setSugerenciaStatus('idle');
             if (docData) {
                 // Edit mode: use data (instant from initialData, updates if freshData differs)
                 setMonto(docData.monto);
@@ -121,9 +125,24 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
     const sugerirCategoria = useSugerirCategoria();
     const handlePropositoBlur = async () => {
         if (!isGasto || categoria !== 0) return;
-        const sugerencia = await sugerirCategoria(proposito, monto).catch(() => null);
-        const sugerida = sugerencia?.fk_categoria;
-        if (!sugerida) return;
+        // Too short to ask about (the hook would skip it anyway)
+        if (proposito.trim().length < 2) return;
+        // Only the latest blur may set the status; an older answer arriving late is dropped
+        const request = ++sugerenciaRequest.current;
+        setSugerenciaStatus('loading');
+        let sugerida: number | null | undefined;
+        try {
+            sugerida = (await sugerirCategoria(proposito, monto))?.fk_categoria;
+        } catch {
+            if (request === sugerenciaRequest.current) setSugerenciaStatus('error');
+            return;
+        }
+        if (request !== sugerenciaRequest.current) return;
+        if (!sugerida) {
+            setSugerenciaStatus('none');
+            return;
+        }
+        setSugerenciaStatus('idle');
         setCategoriaSugerida(sugerida);
         // The user may have picked one while the request was in flight
         setCategoria((actual) => (actual === 0 ? sugerida : actual));
@@ -373,6 +392,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                                                 <span className="ml-auto flex items-center gap-1 text-xs font-normal text-muted-foreground">
                                                     <Sparkles className="size-3" />
                                                     Sugerida
+                                                </span>
+                                            )}
+                                            {categoria === 0 && sugerenciaStatus === 'loading' && (
+                                                <span className="ml-auto flex items-center gap-1 text-xs font-normal text-muted-foreground">
+                                                    <Loader2 className="size-3 animate-spin" />
+                                                    Sugiriendo…
+                                                </span>
+                                            )}
+                                            {categoria === 0 && (sugerenciaStatus === 'none' || sugerenciaStatus === 'error') && (
+                                                <span className="ml-auto flex items-center gap-1 text-xs font-normal text-amber-500/70">
+                                                    <Sparkles className="size-3" />
+                                                    {sugerenciaStatus === 'none' ? 'Sin sugerencia' : 'Sugerencia no disponible'}
                                                 </span>
                                             )}
                                         </Label>
