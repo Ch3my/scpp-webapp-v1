@@ -16,6 +16,18 @@ function isUnreachable(error: unknown) {
   return axios.isAxiosError(error) && !error.response;
 }
 
+/**
+ * /check-session is retried before the app calls itself offline. One 8 s
+ * attempt was not enough: Railway sleeps idle containers, and a cold start
+ * regularly outlasts it, so the first open of the day said "Sin conexión" to a
+ * phone that was online. A timed-out request still wakes the container, so the
+ * early attempts can be short; the timeout then doubles up to a 15 s cap, and
+ * the pause between attempts doubles too.
+ */
+const PROBE_RETRIES = 2
+const probeTimeout = (attempt: number) => Math.min(4000 * 2 ** attempt, 15000)
+const probeDelay = (attempt: number) => 1000 * 2 ** (attempt - 1)
+
 function notifyOffline() {
   toast("Sin conexión", {
     description: "Mostrando los últimos datos guardados.",
@@ -60,19 +72,25 @@ export default function App() {
         return
       }
 
-      try {
-        // Capped explicitly: with no timeout a captive portal leaves this
-        // promise pending for as long as the app is open.
-        await api.get("/check-session", { timeout: 8000 })
-      } catch (error) {
-        if (isUnreachable(error)) {
-          notifyOffline()
+      for (let attempt = 0; attempt <= PROBE_RETRIES; attempt++) {
+        if (attempt > 0) {
+          await new Promise((resolve) => setTimeout(resolve, probeDelay(attempt)))
+          if (!navigator.onLine) break
         }
-        // Any other answer is either a 401 - already handled by the
-        // interceptor, which is redirecting as we speak - or a sick backend,
-        // and sending someone to a login screen they cannot use either would
-        // not help. The screens' own queries will surface it.
+        try {
+          // Capped explicitly: with no timeout a captive portal leaves this
+          // promise pending for as long as the app is open.
+          await api.get("/check-session", { timeout: probeTimeout(attempt) })
+          return
+        } catch (error) {
+          // Any answer other than "unreachable" is either a 401 - already
+          // handled by the interceptor, which is redirecting as we speak - or
+          // a sick backend, and sending someone to a login screen they cannot
+          // use either would not help. The screens' own queries will surface it.
+          if (!isUnreachable(error)) return
+        }
       }
+      notifyOffline()
     }
 
     setLoggedIn(true)
