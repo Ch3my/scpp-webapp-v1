@@ -117,7 +117,18 @@ const DocRecord: React.FC<DocRecordProps> = ({ hideButton = false, onOpenChange,
                 setCuotas(0);
             }
         }
-    }, [isOpen, docData, me?.miembro.id]);
+        // Keyed on the stored values, not the docData object or /me: both land a
+        // moment after opening, while you are typing the (autofocused) monto, and
+        // re-running here put the form back - including monto to 0 under digits
+        // still on screen. The refetch now only resets when the row really changed.
+    }, [isOpen, docData?.id, docData?.monto, docData?.proposito, docData?.fecha, docData?.fk_tipoDoc,
+        docData?.fk_categoria, docData?.fk_proyecto, docData?.fk_miembro]);
+
+    // /me may arrive after opening; fill the owner then and leave the rest alone
+    useEffect(() => {
+        const myId = me?.miembro.id;
+        if (isOpen && myId) setMiembro((actual) => (actual === 0 ? myId : actual));
+    }, [isOpen, me?.miembro.id]);
 
     // Leaving the proposito field fills an empty categoria from the classifier.
     // A categoria that is already set - picked, saved, or suggested earlier - is

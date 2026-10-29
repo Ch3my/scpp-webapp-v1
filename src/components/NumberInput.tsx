@@ -44,22 +44,23 @@ export function NumberInput({
   signToggle = false,
   ref,
 }: NumberInputProps) {
-  const [displayValue, setDisplayValue] = React.useState("")
+  // The text as last typed. It is only shown while it still means `value`.
+  const [draft, setDraft] = React.useState("")
 
   //
-  // 1) Whenever `value` (from the parent) changes, we re-format the display
+  // 1) Display is derived, never synced. An effect keyed on `value` missed a
+  //    parent reset to the number it already held (keystroke 5000 and reset 0
+  //    in one render: 0 -> 0, no effect), leaving digits on screen over a 0
+  //    that then got saved. Object.is so "-0" and "-" survive.
   //
-  React.useEffect(() => {
-    if (Number.isNaN(value) || value === null || value === undefined) {
-      setDisplayValue("")
-    } else {
-      // If you want to detect negative zero from the parent, you'd do so here.
-      // By default, we just treat numeric -0 as 0.
-      setDisplayValue(
-        formatNumber(value, thousandsSeparator, decimalSeparator, decimalPlaces)
-      )
-    }
-  }, [value, thousandsSeparator, decimalSeparator, decimalPlaces])
+  const displayValue = Object.is(
+    parseInput(draft, thousandsSeparator, decimalSeparator, decimalPlaces).value,
+    value
+  )
+    ? draft
+    : Number.isNaN(value) || value === null || value === undefined
+      ? ""
+      : formatNumber(value, thousandsSeparator, decimalSeparator, decimalPlaces)
 
   //
   // 2) Restrict user keystrokes:
@@ -121,58 +122,9 @@ export function NumberInput({
   // 3) OnChange => parse & format
   //
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Any '-' typed anywhere flips the sign: "1,234-" => "-1234", and a second
-    // '-' on "-1,234" cancels the existing one => "1234". Android soft keyboards
-    // mostly report keys as "Unidentified", so this has to work from the value
-    // rather than from handleKeyDown.
-    const rawInput = e.target.value
-    const minusCount = (rawInput.match(/-/g) ?? []).length
-    const userInput = (minusCount % 2 === 1 ? "-" : "") + rawInput.replace(/-/g, "")
-
-    // If empty => pass NaN to parent, clear display
-    if (userInput.trim() === "") {
-      onChange(NaN)
-      setDisplayValue("")
-      return
-    }
-
-    // If user explicitly typed "-0", preserve it visually
-    if (userInput === "-0") {
-      // Numerically, parseFloat("-0") is -0 => 0 in most JS operations
-      onChange(0)
-      setDisplayValue("-0")
-      return
-    }
-
-    // 1) Remove all thousands separators
-    //    (e.g. "1.234.567,89" => "1234567,89" if thousandsSeparator='.' & decimalSeparator=',')
-    const noThousands = userInput.split(thousandsSeparator).join("")
-
-    // 2) Convert the custom decimal separator to a standard '.' for parseFloat
-    //    (e.g. "1234567,89" => "1234567.89" if decimalSeparator=',')
-    const normalized = noThousands.replace(decimalSeparator, ".")
-
-    // 3) Parse
-    const numericValue = parseFloat(normalized)
-
-    // If parse fails => NaN
-    if (Number.isNaN(numericValue)) {
-      onChange(NaN)
-      setDisplayValue(userInput) // keep raw so user can fix it
-      return
-    }
-
-    // If valid => update parent
-    onChange(numericValue)
-
-    // 4) Format for display
-    const formatted = formatNumber(
-      numericValue,
-      thousandsSeparator,
-      decimalSeparator,
-      decimalPlaces
-    )
-    setDisplayValue(formatted)
+    const parsed = parseInput(e.target.value, thousandsSeparator, decimalSeparator, decimalPlaces)
+    onChange(parsed.value)
+    setDraft(parsed.text)
   }
 
   //
@@ -181,7 +133,7 @@ export function NumberInput({
   //
   const toggleSign = () => {
     if (Number.isNaN(value) || value === null || value === undefined) {
-      setDisplayValue((current) => (current === "-" ? "" : "-"))
+      setDraft(displayValue === "-" ? "" : "-")
       return
     }
     onChange(-value)
@@ -220,6 +172,47 @@ export function NumberInput({
 }
 
 /**
+ * Turn what is in the field into the text to show and the number it means.
+ *   "1,234-" => { text: "-1,234", value: -1234 }
+ *   "-0"     => { text: "-0", value: -0 }   (kept so digits typed next stay negative)
+ *   "-"      => { text: "-", value: NaN }
+ */
+function parseInput(
+  rawInput: string,
+  thousandsSeparator: string,
+  decimalSeparator: string,
+  decimalPlaces: number
+): { text: string; value: number } {
+  // Any '-' typed anywhere flips the sign: "1,234-" => "-1234", and a second
+  // '-' on "-1,234" cancels the existing one => "1234". Android soft keyboards
+  // mostly report keys as "Unidentified", so this has to work from the value
+  // rather than from handleKeyDown.
+  const minusCount = (rawInput.match(/-/g) ?? []).length
+  const userInput = (minusCount % 2 === 1 ? "-" : "") + rawInput.replace(/-/g, "")
+
+  if (userInput.trim() === "") return { text: "", value: NaN }
+
+  if (userInput === "-0") return { text: "-0", value: -0 }
+
+  // "1.234.567,89" => "1234567.89" for thousandsSeparator='.' & decimalSeparator=','
+  const normalized = userInput.split(thousandsSeparator).join("").replace(decimalSeparator, ".")
+  const numericValue = parseFloat(normalized)
+
+  // Keep the raw text so the user can fix it
+  if (Number.isNaN(numericValue)) return { text: userInput, value: NaN }
+
+  // Report the rounded number, so the parent holds exactly what is displayed
+  const rounded = decimalPlaces >= 0
+    ? parseFloat(numericValue.toFixed(decimalPlaces))
+    : numericValue
+
+  return {
+    text: formatNumber(rounded, thousandsSeparator, decimalSeparator, decimalPlaces),
+    value: rounded,
+  }
+}
+
+/**
  * Manually format a number using given thousandsSeparator, decimalSeparator,
  * and a fixed decimalPlaces count (rounding if needed).
  *
@@ -233,10 +226,13 @@ function formatNumber(
   decimalSeparator: string,
   decimalPlaces: number
 ): string {
-  // Round to the specified number of decimal places
-  const roundedValue = decimalPlaces >= 0
-    ? parseFloat(value.toFixed(decimalPlaces))
-    : value
+  // Round to the specified number of decimal places. (-0).toFixed() is "0", so
+  // -0 would come out positive and ± on a 0 field would arm nothing.
+  const roundedValue = Object.is(value, -0)
+    ? -0
+    : decimalPlaces >= 0
+      ? parseFloat(value.toFixed(decimalPlaces))
+      : value
 
   // Convert to string with that many decimals
   const baseString = decimalPlaces >= 0
